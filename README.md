@@ -57,7 +57,7 @@ qualified reproducibility rather than retrofitted instrumentation.
 
 ## What exists now
 
-Package `0.3.0` contains the Milestone 0 substrate through MW-003:
+Package `0.4.0` contains the Milestone 0 substrate through MW-004:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -68,10 +68,18 @@ Package `0.3.0` contains the Milestone 0 substrate through MW-003:
 - `cmw.events` canonically serializes ordered events and state updates.
 - `cmw.replay` reconstructs terminal state from the event log and verifies the
   manifest, each event, the whole log, and terminal-state SHA-256 digests.
+- `cmw.kernel` applies immutable world transitions over a configurable 2D grid,
+  with bounded energy and integrity, authoritative action costs, hazards,
+  consumable-resource conservation, delayed consequences, and hard terminal
+  floors.
+- The evaluator-only `WorldState` stays outside the public kernel API. Candidate
+  code receives four typed observation channels generated with an independent
+  explicit RNG continuation; resource quality and other ground truth remain
+  hidden.
 
-The world kernel, scenario library, telemetry metrics, baselines, and oracle
-comparison are still ahead. MW-004, the pure viability-world transition, is
-next.
+The scenario library, telemetry metrics, baselines, and oracle comparison are
+still ahead. MW-005's declarative fixtures are next; they supply scenario values
+to the kernel without changing its transition boundary.
 
 ## Try deterministic replay
 
