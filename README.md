@@ -27,6 +27,24 @@ docs/adr/                              decision records (ADR-001..015)
 docs/verdicts/                         per-issue and per-milestone verdicts
 ```
 
+## Contracts
+
+`cmw.contracts` is the frozen component boundary. Its 15 public message
+types match the MW-002 knowledge-graph assignment; every type is a
+keyword-only, frozen `msgspec.Struct` with explicit `schema_version` and
+deterministic `unit_cost` fields. Nested collections are tuples and nested
+values are themselves frozen structs, so a mutable list or mapping cannot
+hide behind an immutable outer object.
+
+Canonical JSON serialization is explicit about the target schema:
+
+```python
+from cmw.contracts import ObservationEnvelope, decode_contract, encode_contract
+
+payload = encode_contract(observation)
+restored = decode_contract(payload, ObservationEnvelope)
+```
+
 ## Gates
 
 Every gate must be green before a commit.
@@ -59,7 +77,7 @@ uv run --locked python -m cmw.replay <run_dir>
 
 ## Status
 
-Milestone 0, issue MW-001 includes the Python 3.14.7 free-threaded
-baseline; MW-002 is next. Progress is tracked in GORDIAN and recorded per
-issue in `docs/verdicts/MW-###.md` — a milestone closes with a verdict,
-not with success.
+Milestone 0 includes the Python 3.14.7 free-threaded baseline and canonical
+data-contract boundary through MW-002; MW-003 is next. Progress is tracked
+in GORDIAN and recorded per issue in `docs/verdicts/MW-###.md` — a milestone
+closes with a verdict, not with success.

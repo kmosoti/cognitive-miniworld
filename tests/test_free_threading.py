@@ -8,8 +8,18 @@ from itertools import pairwise
 from statistics import median
 from time import perf_counter_ns
 
-import msgspec
 import pytest
+
+from cmw import __version__
+from cmw.contracts import (
+    CURRENT_SCHEMA_VERSION,
+    FeatureValue,
+    ObservationEnvelope,
+    Provenance,
+    Uncertainty,
+    decode_contract,
+    encode_contract,
+)
 
 PYTHON_VERSION = (3, 14, 7)
 TASK_COUNT = 8
@@ -18,22 +28,41 @@ TIMING_SAMPLES = 5
 MIN_STEP_IMPROVEMENT = 0.05
 
 
-class StressPayload(msgspec.Struct, frozen=True, kw_only=True):
-    """A deterministic native-extension payload used only for qualification."""
-
-    schema_version: int
-    index: int
-    values: tuple[int, ...]
-
-
-def _round_trip(index: int) -> tuple[bytes, StressPayload]:
-    payload = StressPayload(
-        schema_version=1,
-        index=index,
-        values=(index, index * 2, index * 3),
+def _round_trip(index: int) -> tuple[bytes, ObservationEnvelope]:
+    provenance = Provenance(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        source_event_ids=(f"sensor-{index}",),
+        producer="free-thread-stress",
+        producer_version=__version__,
     )
-    encoded = msgspec.msgpack.encode(payload)
-    decoded = msgspec.msgpack.decode(encoded, type=StressPayload)
+    uncertainty = Uncertainty(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        confidence=1.0,
+        lower_bound=None,
+        upper_bound=None,
+        entropy=None,
+    )
+    payload = ObservationEnvelope(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        unit_cost=0,
+        event_id=f"observation-{index}",
+        tick=index,
+        modality="stress",
+        latency_ticks=0,
+        reliability=1.0,
+        values=(
+            FeatureValue(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                name="index",
+                value=index,
+                unit=None,
+            ),
+        ),
+        provenance=provenance,
+        uncertainty=uncertainty,
+    )
+    encoded = encode_contract(payload)
+    decoded = decode_contract(encoded, ObservationEnvelope)
     return encoded, decoded
 
 
@@ -65,7 +94,7 @@ def test_runtime_is_python_3147_with_gil_disabled() -> None:
 
 
 @pytest.mark.freethreaded
-def test_msgspec_round_trips_are_thread_safe_and_deterministic() -> None:
+def test_canonical_round_trips_are_thread_safe_and_deterministic() -> None:
     workers = min(8, os.process_cpu_count() or 1)
     indices = tuple(range(2_000))
 
@@ -79,7 +108,10 @@ def test_msgspec_round_trips_are_thread_safe_and_deterministic() -> None:
         )
 
     assert first == second
-    assert all(decoded.index == index for index, (_, decoded) in enumerate(first))
+    assert all(
+        decoded.event_id == f"observation-{index}"
+        for index, (_, decoded) in enumerate(first)
+    )
     assert sys._is_gil_enabled() is False
 
 
@@ -98,9 +130,7 @@ def test_thread_pool_has_a_monotonic_scaling_curve() -> None:
 
     for sample_index in range(TIMING_SAMPLES):
         order = (
-            worker_levels
-            if sample_index % 2 == 0
-            else list(reversed(worker_levels))
+            worker_levels if sample_index % 2 == 0 else list(reversed(worker_levels))
         )
         for workers in order:
             elapsed, output = _timed_probe(workers)
