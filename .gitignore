@@ -7,7 +7,6 @@ dist/
 
 # Environments (uv)
 .venv/
-.python-version
 
 # Tool caches
 .pytest_cache/

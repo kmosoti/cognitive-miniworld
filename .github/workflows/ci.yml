@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.5"
+          enable-cache: true
+
+      # --locked fails if uv.lock is stale: CI runs the committed environment
+      # or it does not run at all (MW-001 acceptance).
+      - name: Sync locked environment
+        run: uv sync --locked --all-groups
+
+      - name: Lint
+        run: uv run ruff check src tests
+
+      - name: Type check
+        run: uv run ty check
+
+      - name: Evidence graph
+        run: |
+          uv run python knowledge/validate_graph.py \
+            knowledge/cognitive-miniworld-knowledge-graph.jsonld
+
+      # One invocation collects every marker, so the replay gates from
+      # MW-003 and the smoke experiments from MW-005 fail this job without
+      # a workflow change.
+      - name: Tests (unit, property, replay, smoke)
+        run: uv run pytest

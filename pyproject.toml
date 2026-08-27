@@ -1,0 +1,55 @@
+[project]
+name = "cognitive-miniworld"
+version = "0.1.0"
+description = "ViabilityGrid: a deterministic testbed for cognitive primitives"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "msgspec>=0.19.0",
+]
+
+[project.urls]
+Epic = "https://github.com/kennedy/cognitive-miniworld/blob/main/EPIC-001-cognitive-miniworld.md"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cmw"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "hypothesis>=6.112.0",
+    "ruff>=0.14.0",
+    "ty>=0.0.75",
+]
+
+# ---------------------------------------------------------------- lint ----
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "TID", "N"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"random".msg = "EPIC §5.1: randomness flows through cmw.rng named streams (MW-003)."
+"uuid".msg = "EPIC §5.2: identifiers must be deterministic, not uuid4."
+"numpy.random".msg = "EPIC §5.1: use cmw.rng named streams, not numpy module-global RNG."
+
+# --------------------------------------------------------------- types ----
+[tool.ty.environment]
+python-version = "3.12"
+
+# --------------------------------------------------------------- tests ----
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+    "property: Hypothesis property test (EPIC §14).",
+    "replay: deterministic replay gate (lands with MW-003).",
+    "smoke: fast experiment smoke run (lands with MW-005).",
+]
