@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments (uv)
+.venv/
+.python-version
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.ty_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Experiment artifacts — runs are reproducible from manifest + seed (EPIC §5)
+runs/
+*.jsonl
+!knowledge/**/*.jsonl
+
+# OS / editor
+.DS_Store
+*.swp

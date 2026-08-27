@@ -1,0 +1,63 @@
+PREFIX cmw: <urn:kennedy:cognitive-miniworld:>
+PREFIX schema: <https://schema.org/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+# 1. Which primitives are supported by causal interventions?
+SELECT DISTINCT ?primitive ?primitiveName ?claim ?sourceTitle WHERE {
+  ?claim a cmw:EvidenceClaim ;
+         cmw:evidenceClass <urn:kennedy:cognitive-miniworld:evidence/causal-intervention> ;
+         cmw:supports ?primitive ;
+         <http://purl.org/dc/terms/source> ?source .
+  ?primitive schema:name ?primitiveName .
+  ?source schema:name ?sourceTitle .
+}
+
+# 2. Which candidate primitives lack a test?
+SELECT ?primitive ?name WHERE {
+  ?primitive a cmw:CognitivePrimitive ; schema:name ?name .
+  FILTER NOT EXISTS { ?primitive cmw:testedBy ?experiment }
+}
+
+# 3. Trace a project theory through evidence to experiments and metrics.
+SELECT ?theoryName ?claimName ?sourceTitle ?primitiveName ?experimentName ?metricName WHERE {
+  ?theory a cmw:CandidateTheory ;
+          schema:name ?theoryName ;
+          cmw:supportedBy ?claim ;
+          cmw:testedBy ?experiment .
+  ?claim schema:name ?claimName ;
+         <http://purl.org/dc/terms/source> ?source ;
+         cmw:supports ?primitive .
+  ?source schema:name ?sourceTitle .
+  ?primitive schema:name ?primitiveName .
+  ?experiment schema:name ?experimentName ; cmw:tests ?primitive ; cmw:primaryMetric ?metric .
+  ?metric schema:name ?metricName .
+}
+
+# 4. Show all deferred mechanisms and their dependencies.
+SELECT ?name ?dependencyName WHERE {
+  ?primitive a cmw:CognitivePrimitive ;
+             schema:name ?name ;
+             cmw:implementationTier "deferred" .
+  OPTIONAL {
+    ?primitive cmw:dependsOn ?dependency .
+    ?dependency schema:name ?dependencyName .
+  }
+}
+
+# 5. Trace source -> claim -> primitive -> experiment -> implementation issue.
+SELECT DISTINCT ?sourceTitle ?claimName ?primitiveName ?experimentName ?issueId ?issueName WHERE {
+  ?claim a cmw:EvidenceClaim ;
+         schema:name ?claimName ;
+         <http://purl.org/dc/terms/source> ?source ;
+         cmw:supports ?primitive .
+  ?source schema:name ?sourceTitle .
+  ?primitive a cmw:CognitivePrimitive ;
+             schema:name ?primitiveName ;
+             cmw:testedBy ?experiment .
+  ?experiment schema:name ?experimentName .
+  ?issue a cmw:ImplementationIssue ;
+         schema:identifier ?issueId ;
+         schema:name ?issueName ;
+         cmw:tests ?experiment .
+}
+ORDER BY ?sourceTitle ?claimName ?issueId

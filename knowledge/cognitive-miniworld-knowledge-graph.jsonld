@@ -1,0 +1,3472 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "cmw": "urn:kennedy:cognitive-miniworld:",
+    "schema": "https://schema.org/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "id": "@id",
+    "type": "@type",
+    "label": "schema:name",
+    "description": "schema:description",
+    "identifier": "schema:identifier",
+    "author": "schema:author",
+    "datePublished": {
+      "@id": "schema:datePublished",
+      "@type": "xsd:gYear"
+    },
+    "journal": "schema:isPartOf",
+    "doi": "cmw:doi",
+    "url": {
+      "@id": "schema:url",
+      "@type": "@id"
+    },
+    "sameAs": {
+      "@id": "schema:sameAs",
+      "@type": "@id"
+    },
+    "source": {
+      "@id": "dcterms:source",
+      "@type": "@id"
+    },
+    "derivedFrom": {
+      "@id": "prov:wasDerivedFrom",
+      "@type": "@id"
+    },
+    "supports": {
+      "@id": "cmw:supports",
+      "@type": "@id"
+    },
+    "supportedBy": {
+      "@id": "cmw:supportedBy",
+      "@type": "@id"
+    },
+    "constrains": {
+      "@id": "cmw:constrains",
+      "@type": "@id"
+    },
+    "operationalizes": {
+      "@id": "cmw:operationalizes",
+      "@type": "@id"
+    },
+    "contradicts": {
+      "@id": "cmw:contradicts",
+      "@type": "@id"
+    },
+    "dependsOn": {
+      "@id": "cmw:dependsOn",
+      "@type": "@id"
+    },
+    "hasPart": {
+      "@id": "schema:hasPart",
+      "@type": "@id"
+    },
+    "isPartOf": {
+      "@id": "schema:isPartOf",
+      "@type": "@id"
+    },
+    "testedBy": {
+      "@id": "cmw:testedBy",
+      "@type": "@id"
+    },
+    "tests": {
+      "@id": "cmw:tests",
+      "@type": "@id"
+    },
+    "measuredBy": {
+      "@id": "cmw:measuredBy",
+      "@type": "@id"
+    },
+    "baseline": {
+      "@id": "cmw:baseline",
+      "@type": "@id"
+    },
+    "failureMode": {
+      "@id": "cmw:failureMode",
+      "@type": "@id"
+    },
+    "mitigates": {
+      "@id": "cmw:mitigates",
+      "@type": "@id"
+    },
+    "replacedBy": {
+      "@id": "cmw:replacedBy",
+      "@type": "@id"
+    },
+    "inputType": {
+      "@id": "cmw:inputType",
+      "@type": "@id"
+    },
+    "outputType": {
+      "@id": "cmw:outputType",
+      "@type": "@id"
+    },
+    "implements": {
+      "@id": "cmw:implements",
+      "@type": "@id"
+    },
+    "implementedBy": {
+      "@id": "cmw:implementedBy",
+      "@type": "@id"
+    },
+    "evidenceClass": {
+      "@id": "cmw:evidenceClass",
+      "@type": "@id"
+    },
+    "epistemicStatus": {
+      "@id": "cmw:epistemicStatus",
+      "@type": "@id"
+    },
+    "biologicalScale": {
+      "@id": "cmw:biologicalScale",
+      "@type": "@id"
+    },
+    "timeScale": {
+      "@id": "cmw:timeScale",
+      "@type": "@id"
+    },
+    "implementationTier": "cmw:implementationTier",
+    "scopeLimit": "cmw:scopeLimit",
+    "sourceLocator": "cmw:sourceLocator",
+    "engineeringAnalogy": "cmw:engineeringAnalogy",
+    "analogyBoundary": "cmw:analogyBoundary",
+    "contractQuestion": "cmw:contractQuestion",
+    "objective": "cmw:objective",
+    "killTest": "cmw:killTest",
+    "acceptanceCriterion": "cmw:acceptanceCriterion",
+    "nonGoal": "cmw:nonGoal",
+    "status": "cmw:status",
+    "priority": "cmw:priority",
+    "scenarioVariable": "cmw:scenarioVariable",
+    "action": "cmw:action",
+    "observationChannel": "cmw:observationChannel",
+    "invariant": "cmw:invariant",
+    "formula": "cmw:formula",
+    "unit": "cmw:unit",
+    "direction": "cmw:direction",
+    "primaryMetric": {
+      "@id": "cmw:primaryMetric",
+      "@type": "@id"
+    },
+    "safetyMetric": {
+      "@id": "cmw:safetyMetric",
+      "@type": "@id"
+    },
+    "workItem": {
+      "@id": "cmw:workItem",
+      "@type": "@id"
+    },
+    "hypothesis": {
+      "@id": "cmw:hypothesis",
+      "@type": "@id"
+    }
+  },
+  "@graph": [
+    {
+      "label": "Source-derived claim",
+      "description": "A bounded paraphrase directly traceable to an identified source.",
+      "@id": "cmw:status/source-derived",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Engineering inference",
+      "description": "A proposed architecture or test derived from source claims; not a biological fact.",
+      "@id": "cmw:status/engineering-inference",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Project hypothesis",
+      "description": "A falsifiable hypothesis proposed for the cognitive miniworld program.",
+      "@id": "cmw:status/project-hypothesis",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Open question",
+      "description": "A material issue not resolved by the current evidence graph.",
+      "@id": "cmw:status/open-question",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Deferred",
+      "description": "Intentionally excluded from the first implementation tier.",
+      "@id": "cmw:status/deferred",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Causal intervention",
+      "description": "An intervention manipulated a candidate mechanism and measured downstream behavior.",
+      "@id": "cmw:evidence/causal-intervention",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Behavioral experiment",
+      "description": "Behavioral data were collected under controlled task conditions.",
+      "@id": "cmw:evidence/behavioral-experiment",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Observational neuroscience",
+      "description": "Neural activity or connectivity was measured without a decisive causal intervention.",
+      "@id": "cmw:evidence/observational-neuroscience",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Computational model",
+      "description": "A model demonstrates computational sufficiency or formal consistency.",
+      "@id": "cmw:evidence/computational-model",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Normative theory",
+      "description": "A theory specifies how a system could or should optimize under stated assumptions.",
+      "@id": "cmw:evidence/normative-theory",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Review or synthesis",
+      "description": "A review integrates findings across studies and theories.",
+      "@id": "cmw:evidence/review-synthesis",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Engineering design",
+      "description": "A project-specific design decision or test contract.",
+      "@id": "cmw:evidence/engineering-design",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Reader schematic",
+      "description": "A secondary explanatory rendering of a scientific source.",
+      "@id": "cmw:evidence/source-schematic",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Molecular",
+      "@id": "cmw:scale/molecular",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Synaptic",
+      "@id": "cmw:scale/synaptic",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Local circuit",
+      "@id": "cmw:scale/local-circuit",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Distributed network",
+      "@id": "cmw:scale/distributed-network",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Organ system",
+      "@id": "cmw:scale/organ-system",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Whole organism",
+      "@id": "cmw:scale/whole-organism",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Behavioral",
+      "@id": "cmw:scale/behavioral",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Computational abstraction",
+      "@id": "cmw:scale/computational",
+      "@type": "skos:Concept"
+    },
+    {
+      "label": "Cognitive Miniworld Research Program",
+      "description": "A falsifiable, black-box testbed for cognitive control primitives inspired by neurobiology without asserting one-to-one brain-to-software identity.",
+      "objective": "Determine which candidate primitives independently improve regulation, epistemic calibration, adaptation, and value-per-compute under controlled partial observability.",
+      "nonGoal": [
+        "Reproduce a human brain.",
+        "Claim consciousness from architecture alone.",
+        "Treat a named brain region as a deployable software module.",
+        "Use an LLM as a substitute for state estimation, control, or learning."
+      ],
+      "hasPart": [
+        "cmw:theory/endogenous-regulation",
+        "cmw:theory/appraisal-control-signals",
+        "cmw:theory/useful-curiosity",
+        "cmw:theory/memory-is-evidence",
+        "cmw:theory/resource-bounded-cognition",
+        "cmw:epic/MW-EPIC-001"
+      ],
+      "@id": "cmw:project/cognitive-miniworld",
+      "@type": [
+        "schema:ResearchProject",
+        "cmw:ResearchProgram"
+      ]
+    },
+    {
+      "label": "Interoception as modeling, allostasis as control — a reader's schematic",
+      "description": "User-provided HTML schematic of Sennesh et al. (2022), explicitly labeled as a theory paper with no new data.",
+      "identifier": "allostasis-as-control.html",
+      "evidenceClass": "cmw:evidence/source-schematic",
+      "sourceLocator": [
+        "Lines 182-188: source metadata and allostatic-control thesis.",
+        "Lines 200-229: homeostasis versus allostasis; regulated resource versus controlled process.",
+        "Lines 305-309: disturbance, open-loop plans, forward/inverse models, prediction error versus control error.",
+        "Lines 314-334: APIC formalism and claimed unification.",
+        "Lines 337-361: falsifiability and open anatomical questions.",
+        "Lines 383-389: analogy boundaries and evidence ceiling."
+      ],
+      "derivedFrom": "cmw:source/sennesh-2022",
+      "@id": "cmw:source/starter-schematic",
+      "@type": [
+        "schema:CreativeWork",
+        "cmw:ReaderSchematic"
+      ]
+    },
+    {
+      "label": "Interoception as modeling, allostasis as control",
+      "author": [
+        "Eli Sennesh",
+        "Jordan E. Theriault",
+        "Daniel Brooks",
+        "Jan-Willem van de Meent",
+        "Lisa Feldman Barrett",
+        "Karen S. Quigley"
+      ],
+      "datePublished": "2022",
+      "journal": "Biological Psychology 167:108242",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/34942287/",
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "doi": "10.1016/j.biopsycho.2021.108242",
+      "sameAs": "https://doi.org/10.1016/j.biopsycho.2021.108242",
+      "@id": "cmw:source/sennesh-2022",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Homeostatic reinforcement learning for integrating reward collection and physiological stability",
+      "author": [
+        "Mehdi Keramati",
+        "Boris Gutkin"
+      ],
+      "datePublished": "2014",
+      "journal": "eLife 3:e04811",
+      "url": "https://elifesciences.org/articles/04811",
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "doi": "10.7554/eLife.04811",
+      "sameAs": "https://doi.org/10.7554/eLife.04811",
+      "@id": "cmw:source/keramati-2014",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "An internal model for sensorimotor integration",
+      "author": [
+        "Daniel M. Wolpert",
+        "Zoubin Ghahramani",
+        "Michael I. Jordan"
+      ],
+      "datePublished": "1995",
+      "journal": "Science 269(5232):1880-1882",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/7569931/",
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "doi": "10.1126/science.7569931",
+      "sameAs": "https://doi.org/10.1126/science.7569931",
+      "@id": "cmw:source/wolpert-1995",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Predictive coding in the visual cortex: a functional interpretation of some extra-classical receptive-field effects",
+      "author": [
+        "Rajesh P. N. Rao",
+        "Dana H. Ballard"
+      ],
+      "datePublished": "1999",
+      "journal": "Nature Neuroscience 2:79-87",
+      "url": "https://www.nature.com/articles/nn0199_79",
+      "evidenceClass": "cmw:evidence/computational-model",
+      "doi": "10.1038/4580",
+      "sameAs": "https://doi.org/10.1038/4580",
+      "@id": "cmw:source/rao-ballard-1999",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Cortical mechanisms of action selection: the affordance competition hypothesis",
+      "author": [
+        "Paul Cisek"
+      ],
+      "datePublished": "2007",
+      "journal": "Philosophical Transactions of the Royal Society B 362:1585-1599",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17428779/",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.1098/rstb.2007.2054",
+      "sameAs": "https://doi.org/10.1098/rstb.2007.2054",
+      "@id": "cmw:source/cisek-2007",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Uncertainty-based competition between prefrontal and dorsolateral striatal systems for behavioral control",
+      "author": [
+        "Nathaniel D. Daw",
+        "Yael Niv",
+        "Peter Dayan"
+      ],
+      "datePublished": "2005",
+      "journal": "Nature Neuroscience 8:1704-1711",
+      "url": "https://www.nature.com/articles/nn1560",
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "doi": "10.1038/nn1560",
+      "sameAs": "https://doi.org/10.1038/nn1560",
+      "@id": "cmw:source/daw-2005",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Dissociable intrinsic connectivity networks for salience processing and executive control",
+      "author": [
+        "William W. Seeley",
+        "Vinod Menon",
+        "Alan F. Schatzberg",
+        "Jennifer Keller",
+        "Gary H. Glover",
+        "Heather Kenna",
+        "Allan L. Reiss",
+        "Michael D. Greicius"
+      ],
+      "datePublished": "2007",
+      "journal": "Journal of Neuroscience 27(9):2349-2356",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17329432/",
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "doi": "10.1523/JNEUROSCI.5587-06.2007",
+      "sameAs": "https://doi.org/10.1523/JNEUROSCI.5587-06.2007",
+      "@id": "cmw:source/seeley-2007",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "The expected value of control: an integrative theory of anterior cingulate cortex function",
+      "author": [
+        "Amitai Shenhav",
+        "Matthew M. Botvinick",
+        "Jonathan D. Cohen"
+      ],
+      "datePublished": "2013",
+      "journal": "Neuron 79(2):217-240",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23889930/",
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "doi": "10.1016/j.neuron.2013.07.007",
+      "sameAs": "https://doi.org/10.1016/j.neuron.2013.07.007",
+      "@id": "cmw:source/shenhav-2013",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Resource-rational analysis: understanding human cognition as the optimal use of limited computational resources",
+      "author": [
+        "Falk Lieder",
+        "Thomas L. Griffiths"
+      ],
+      "datePublished": "2020",
+      "journal": "Behavioral and Brain Sciences 43:e1",
+      "url": "https://www.cambridge.org/core/journals/behavioral-and-brain-sciences/article/resourcerational-analysis-understanding-human-cognition-as-the-optimal-use-of-limited-computational-resources/586866D9AD1D1EA7A1EECE217D392F4A",
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "doi": "10.1017/S0140525X1900061X",
+      "sameAs": "https://doi.org/10.1017/S0140525X1900061X",
+      "@id": "cmw:source/lieder-2020",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Why there are complementary learning systems in the hippocampus and neocortex",
+      "author": [
+        "James L. McClelland",
+        "Bruce L. McNaughton",
+        "Randall C. O'Reilly"
+      ],
+      "datePublished": "1995",
+      "journal": "Psychological Review 102(3):419-457",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/7624455/",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.1037/0033-295X.102.3.419",
+      "sameAs": "https://doi.org/10.1037/0033-295X.102.3.419",
+      "@id": "cmw:source/mcclelland-1995",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Reactivation of hippocampal ensemble memories during sleep",
+      "author": [
+        "Matthew A. Wilson",
+        "Bruce L. McNaughton"
+      ],
+      "datePublished": "1994",
+      "journal": "Science 265(5172):676-679",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/8036517/",
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "doi": "10.1126/science.8036517",
+      "sameAs": "https://doi.org/10.1126/science.8036517",
+      "@id": "cmw:source/wilson-1994",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Selective suppression of hippocampal ripples impairs spatial memory",
+      "author": [
+        "Gabrielle Girardeau",
+        "Karim Benchenane",
+        "Sidney I. Wiener",
+        "György Buzsáki",
+        "Michaël B. Zugaro"
+      ],
+      "datePublished": "2009",
+      "journal": "Nature Neuroscience 12:1222-1223",
+      "url": "https://www.nature.com/articles/nn.2384",
+      "evidenceClass": "cmw:evidence/causal-intervention",
+      "doi": "10.1038/nn.2384",
+      "sameAs": "https://doi.org/10.1038/nn.2384",
+      "@id": "cmw:source/girardeau-2009",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Making working memory work: a computational model of learning in the prefrontal cortex and basal ganglia",
+      "author": [
+        "Randall C. O'Reilly",
+        "Michael J. Frank"
+      ],
+      "datePublished": "2006",
+      "journal": "Neural Computation 18(2):283-328",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/16378516/",
+      "evidenceClass": "cmw:evidence/computational-model",
+      "doi": "10.1162/089976606775093909",
+      "sameAs": "https://doi.org/10.1162/089976606775093909",
+      "@id": "cmw:source/oreilly-frank-2006",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "A neural substrate of prediction and reward",
+      "author": [
+        "Wolfram Schultz",
+        "Peter Dayan",
+        "P. Read Montague"
+      ],
+      "datePublished": "1997",
+      "journal": "Science 275(5306):1593-1599",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/9054347/",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.1126/science.275.5306.1593",
+      "sameAs": "https://doi.org/10.1126/science.275.5306.1593",
+      "@id": "cmw:source/schultz-1997",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Solving the distal reward problem through linkage of STDP and dopamine signaling",
+      "author": [
+        "Eugene M. Izhikevich"
+      ],
+      "datePublished": "2007",
+      "journal": "Cerebral Cortex 17(10):2443-2452",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17220510/",
+      "evidenceClass": "cmw:evidence/computational-model",
+      "doi": "10.1093/cercor/bhl152",
+      "sameAs": "https://doi.org/10.1093/cercor/bhl152",
+      "@id": "cmw:source/izhikevich-2007",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "What is intrinsic motivation? A typology of computational approaches",
+      "author": [
+        "Pierre-Yves Oudeyer",
+        "Frédéric Kaplan"
+      ],
+      "datePublished": "2007",
+      "journal": "Frontiers in Neurorobotics 1:6",
+      "url": "https://www.frontiersin.org/journals/neurorobotics/articles/10.3389/neuro.12.006.2007/full",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.3389/neuro.12.006.2007",
+      "sameAs": "https://doi.org/10.3389/neuro.12.006.2007",
+      "@id": "cmw:source/oudeyer-kaplan-2007",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Humans monitor learning progress in curiosity-driven exploration",
+      "author": [
+        "Alexandr Ten",
+        "Pramod Kaushik",
+        "Pierre-Yves Oudeyer",
+        "Jacqueline Gottlieb"
+      ],
+      "datePublished": "2021",
+      "journal": "Nature Communications 12:5972",
+      "url": "https://www.nature.com/articles/s41467-021-26196-w",
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "doi": "10.1038/s41467-021-26196-w",
+      "sameAs": "https://doi.org/10.1038/s41467-021-26196-w",
+      "@id": "cmw:source/ten-2021",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Curiosity in Hindsight: Intrinsic Exploration in Stochastic Environments",
+      "author": [
+        "Daniel Jarrett",
+        "Corentin Tallec",
+        "Florent Altché",
+        "Thomas Mesnard",
+        "Rémi Munos",
+        "Michal Valko"
+      ],
+      "datePublished": "2023",
+      "journal": "Proceedings of Machine Learning Research 202:14780-14816",
+      "url": "https://proceedings.mlr.press/v202/jarrett23a.html",
+      "evidenceClass": "cmw:evidence/computational-model",
+      "@id": "cmw:source/jarrett-2023",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "The Emotion Process: Event Appraisal and Component Differentiation",
+      "author": [
+        "Klaus R. Scherer",
+        "Agnes Moors"
+      ],
+      "datePublished": "2019",
+      "journal": "Annual Review of Psychology 70:719-745",
+      "url": "https://www.annualreviews.org/content/journals/10.1146/annurev-psych-122216-011854",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.1146/annurev-psych-122216-011854",
+      "sameAs": "https://doi.org/10.1146/annurev-psych-122216-011854",
+      "@id": "cmw:source/scherer-moors-2019",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Representation of confidence associated with a decision by neurons in the parietal cortex",
+      "author": [
+        "Roozbeh Kiani",
+        "Michael N. Shadlen"
+      ],
+      "datePublished": "2009",
+      "journal": "Science 324(5928):759-764",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19423820/",
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "doi": "10.1126/science.1169405",
+      "sameAs": "https://doi.org/10.1126/science.1169405",
+      "@id": "cmw:source/kiani-2009",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Adversarial testing of global neuronal workspace and integrated information theories of consciousness",
+      "author": [
+        "Cogitate Consortium",
+        "Lucia Melloni et al."
+      ],
+      "datePublished": "2025",
+      "journal": "Nature 642:133-142",
+      "url": "https://www.nature.com/articles/s41586-025-08888-1",
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "doi": "10.1038/s41586-025-08888-1",
+      "sameAs": "https://doi.org/10.1038/s41586-025-08888-1",
+      "@id": "cmw:source/cogitate-2025",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "Critical periods in speech perception: new directions",
+      "author": [
+        "Janet F. Werker",
+        "Takao K. Hensch"
+      ],
+      "datePublished": "2015",
+      "journal": "Annual Review of Psychology 66:173-196",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/25251488/",
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "doi": "10.1146/annurev-psych-010814-015104",
+      "sameAs": "https://doi.org/10.1146/annurev-psych-010814-015104",
+      "@id": "cmw:source/werker-hensch-2015",
+      "@type": "schema:ScholarlyArticle"
+    },
+    {
+      "label": "ObservationEnvelope",
+      "description": "A time-stamped, provenance-bearing observation with modality, latency, reliability, and uncertainty metadata.",
+      "@id": "cmw:contract/observation-envelope",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "BeliefState",
+      "description": "A probability-bearing estimate of latent world and body state with evidence links and revision time.",
+      "@id": "cmw:contract/belief-state",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ReferenceTrajectory",
+      "description": "A desired range over time with tolerance, priority, provenance, and prediction horizon.",
+      "@id": "cmw:contract/reference-trajectory",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ActionProposal",
+      "description": "A candidate action with preconditions, parameters, reversibility, estimated cost, and generator provenance.",
+      "@id": "cmw:contract/action-proposal",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ActionDecision",
+      "description": "The selected action, intensity, arbitration rationale, and uncertainty.",
+      "@id": "cmw:contract/action-decision",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "PredictionDistribution",
+      "description": "A distribution over future states and observations conditional on belief and action.",
+      "@id": "cmw:contract/prediction-distribution",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ErrorBundle",
+      "description": "A vector of typed discrepancies including sensory, state revision, control, outcome, timing, agency, and learning-progress channels.",
+      "@id": "cmw:contract/error-bundle",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ExperienceTrace",
+      "description": "A provenance-rich episode linking context, beliefs, references, predictions, actions, outcomes, errors, and eligibility.",
+      "@id": "cmw:contract/experience-trace",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ResourceBudget",
+      "description": "The available time, compute, memory, risk, and energy proxy for a decision cycle.",
+      "@id": "cmw:contract/resource-budget",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "SelfEstimate",
+      "description": "Calibrated estimates of sensor reliability, model competence, resource state, and recent failure regime.",
+      "@id": "cmw:contract/self-estimate",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ProcessingPriority",
+      "description": "A ranked processing request with value, urgency, provenance, deadline, and estimated computation cost.",
+      "@id": "cmw:contract/processing-priority",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ComputeAllocation",
+      "description": "A bounded decision about which computation to run, at what intensity, and when to stop.",
+      "@id": "cmw:contract/compute-allocation",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "AppraisalVector",
+      "description": "A continuous control-mode vector including harm, benefit, certainty, imminence, controllability, agency, urgency, and approach or avoidance bias.",
+      "@id": "cmw:contract/appraisal-vector",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "WorkspaceState",
+      "description": "A bounded set of active representations with admission, maintenance, replacement, and suppression metadata.",
+      "@id": "cmw:contract/workspace-state",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "PlasticitySchedule",
+      "description": "A policy over learning rate, replay, consolidation, exploration, growth, and pruning.",
+      "@id": "cmw:contract/plasticity-schedule",
+      "@type": "cmw:DataContract"
+    },
+    {
+      "label": "ReferenceGenerator",
+      "implementationTier": "regulation",
+      "contractQuestion": "What future states should remain viable under current and predicted demand?",
+      "objective": "Produce context-sensitive reference trajectories rather than one static set point.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/resource-budget"
+      ],
+      "outputType": [
+        "cmw:contract/reference-trajectory"
+      ],
+      "dependsOn": [],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/dynamic-reference-trajectories",
+        "cmw:claim/resource-process-distinction",
+        "cmw:claim/capacity-as-headroom",
+        "cmw:claim/state-dependent-value"
+      ],
+      "testedBy": [
+        "cmw:experiment/dynamic-demand-shift"
+      ],
+      "@id": "cmw:primitive/reference-generator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "StateEstimator",
+      "implementationTier": "core",
+      "contractQuestion": "What is probably true now?",
+      "objective": "Fuse partial, noisy, delayed observations into a calibrated belief distribution.",
+      "inputType": [
+        "cmw:contract/observation-envelope",
+        "cmw:contract/belief-state"
+      ],
+      "outputType": [
+        "cmw:contract/belief-state"
+      ],
+      "dependsOn": [],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/sensorimotor-internal-model"
+      ],
+      "testedBy": [
+        "cmw:experiment/partial-observability",
+        "cmw:experiment/stale-memory"
+      ],
+      "mitigates": [
+        "cmw:failure/stale-memory-substitution"
+      ],
+      "@id": "cmw:primitive/state-estimator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "ForwardModel",
+      "implementationTier": "core",
+      "contractQuestion": "What is likely to happen after a candidate action?",
+      "objective": "Predict future states, observations, and timing conditional on action.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/action-proposal"
+      ],
+      "outputType": [
+        "cmw:contract/prediction-distribution"
+      ],
+      "dependsOn": [
+        "cmw:primitive/state-estimator"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/sensorimotor-internal-model",
+        "cmw:claim/predictive-coding-sufficiency"
+      ],
+      "testedBy": [
+        "cmw:experiment/transition-shift"
+      ],
+      "mitigates": [
+        "cmw:failure/model-staleness"
+      ],
+      "@id": "cmw:primitive/forward-model",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "ErrorDecomposer",
+      "implementationTier": "core",
+      "contractQuestion": "In what way was the system wrong or off trajectory?",
+      "objective": "Keep prediction, control, outcome, timing, agency, and learning-progress errors distinct.",
+      "inputType": [
+        "cmw:contract/prediction-distribution",
+        "cmw:contract/belief-state",
+        "cmw:contract/reference-trajectory",
+        "cmw:contract/observation-envelope"
+      ],
+      "outputType": [
+        "cmw:contract/error-bundle"
+      ],
+      "dependsOn": [
+        "cmw:primitive/state-estimator",
+        "cmw:primitive/forward-model"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/prediction-control-error-distinction",
+        "cmw:claim/predictive-coding-sufficiency",
+        "cmw:claim/reward-prediction-error"
+      ],
+      "testedBy": [
+        "cmw:experiment/error-disagreement"
+      ],
+      "mitigates": [
+        "cmw:failure/scalar-error-collapse"
+      ],
+      "@id": "cmw:primitive/error-decomposer",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "AffordanceGenerator",
+      "implementationTier": "core",
+      "contractQuestion": "What actions are currently possible?",
+      "objective": "Generate action candidates before final arbitration.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/reference-trajectory"
+      ],
+      "outputType": [
+        "cmw:contract/action-proposal"
+      ],
+      "dependsOn": [
+        "cmw:primitive/state-estimator"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/parallel-affordance-competition"
+      ],
+      "testedBy": [
+        "cmw:experiment/affordance-coverage"
+      ],
+      "mitigates": [
+        "cmw:failure/affordance-blindness"
+      ],
+      "@id": "cmw:primitive/affordance-generator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "ActionArbitrator",
+      "implementationTier": "core",
+      "contractQuestion": "Which action should be selected, inhibited, or intensified?",
+      "objective": "Trade goal progress, risk, information value, cost, reversibility, and deadline.",
+      "inputType": [
+        "cmw:contract/action-proposal",
+        "cmw:contract/prediction-distribution",
+        "cmw:contract/error-bundle",
+        "cmw:contract/resource-budget"
+      ],
+      "outputType": [
+        "cmw:contract/action-decision"
+      ],
+      "dependsOn": [
+        "cmw:primitive/affordance-generator",
+        "cmw:primitive/forward-model",
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/resource-process-distinction",
+        "cmw:claim/capacity-as-headroom",
+        "cmw:claim/state-dependent-value",
+        "cmw:claim/parallel-affordance-competition",
+        "cmw:claim/uncertainty-controller-arbitration",
+        "cmw:claim/graded-decision-confidence"
+      ],
+      "testedBy": [
+        "cmw:experiment/appraisal-contrast"
+      ],
+      "@id": "cmw:primitive/action-arbitrator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "SalienceRouter",
+      "implementationTier": "adaptive",
+      "contractQuestion": "Which signals deserve scarce processing?",
+      "objective": "Prioritize behaviorally useful information under distractor load.",
+      "inputType": [
+        "cmw:contract/observation-envelope",
+        "cmw:contract/error-bundle",
+        "cmw:contract/reference-trajectory"
+      ],
+      "outputType": [
+        "cmw:contract/processing-priority"
+      ],
+      "dependsOn": [
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/salience-executive-network-distinction"
+      ],
+      "testedBy": [
+        "cmw:experiment/distractor-flood"
+      ],
+      "mitigates": [
+        "cmw:failure/novelty-hijack"
+      ],
+      "@id": "cmw:primitive/salience-router",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "MetacontrolAllocator",
+      "implementationTier": "adaptive",
+      "contractQuestion": "Which computation is worth running, and when should it stop?",
+      "objective": "Allocate cognitive computation by expected marginal decision value.",
+      "inputType": [
+        "cmw:contract/resource-budget",
+        "cmw:contract/self-estimate",
+        "cmw:contract/processing-priority"
+      ],
+      "outputType": [
+        "cmw:contract/compute-allocation"
+      ],
+      "dependsOn": [
+        "cmw:primitive/salience-router"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/salience-executive-network-distinction",
+        "cmw:claim/expected-value-of-control",
+        "cmw:claim/resource-rational-method"
+      ],
+      "testedBy": [
+        "cmw:experiment/compute-budget",
+        "cmw:experiment/sensor-degradation"
+      ],
+      "mitigates": [
+        "cmw:failure/overthinking-sink"
+      ],
+      "@id": "cmw:primitive/metacontrol-allocator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "EpistemicController",
+      "implementationTier": "adaptive",
+      "contractQuestion": "What information-seeking action is expected to produce useful learning?",
+      "objective": "Prefer expected learning progress over raw surprise and abandon irreducible noise.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/prediction-distribution",
+        "cmw:contract/error-bundle",
+        "cmw:contract/resource-budget"
+      ],
+      "outputType": [
+        "cmw:contract/action-proposal"
+      ],
+      "dependsOn": [
+        "cmw:primitive/forward-model",
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/intrinsic-motivation-typology",
+        "cmw:claim/human-learning-progress",
+        "cmw:claim/stochastic-curiosity-failure"
+      ],
+      "testedBy": [
+        "cmw:experiment/learnable-unknown",
+        "cmw:experiment/noisy-tv"
+      ],
+      "mitigates": [
+        "cmw:failure/noisy-tv",
+        "cmw:failure/novelty-hijack"
+      ],
+      "@id": "cmw:primitive/epistemic-controller",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "EpisodicRecorder",
+      "implementationTier": "learning",
+      "contractQuestion": "What experience should be preserved with its provenance?",
+      "objective": "Store fast, sparse, inspectable episodes without immediately rewriting general knowledge.",
+      "inputType": [
+        "cmw:contract/experience-trace"
+      ],
+      "outputType": [
+        "cmw:contract/experience-trace"
+      ],
+      "dependsOn": [
+        "cmw:primitive/error-decomposer",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/complementary-learning-systems"
+      ],
+      "testedBy": [
+        "cmw:experiment/consolidation-interference",
+        "cmw:experiment/stale-memory"
+      ],
+      "@id": "cmw:primitive/episodic-recorder",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "WorkingMemoryGate",
+      "implementationTier": "learning",
+      "contractQuestion": "What representation should be admitted, maintained, replaced, or suppressed?",
+      "objective": "Bound active state and reduce context churn.",
+      "inputType": [
+        "cmw:contract/processing-priority",
+        "cmw:contract/belief-state",
+        "cmw:contract/resource-budget"
+      ],
+      "outputType": [
+        "cmw:contract/workspace-state"
+      ],
+      "dependsOn": [
+        "cmw:primitive/salience-router"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/working-memory-gating-model"
+      ],
+      "testedBy": [
+        "cmw:experiment/working-memory-interference"
+      ],
+      "mitigates": [
+        "cmw:failure/context-churn"
+      ],
+      "@id": "cmw:primitive/working-memory-gate",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "CreditAssigner",
+      "implementationTier": "learning",
+      "contractQuestion": "Which earlier mechanisms and actions contributed to the current outcome?",
+      "objective": "Apply delayed updates only to eligible contributors and reduce superstition.",
+      "inputType": [
+        "cmw:contract/experience-trace",
+        "cmw:contract/error-bundle"
+      ],
+      "outputType": [
+        "cmw:contract/experience-trace"
+      ],
+      "dependsOn": [
+        "cmw:primitive/episodic-recorder",
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/reward-prediction-error",
+        "cmw:claim/eligibility-distal-credit-model"
+      ],
+      "testedBy": [
+        "cmw:experiment/delayed-credit"
+      ],
+      "mitigates": [
+        "cmw:failure/global-credit-superstition"
+      ],
+      "@id": "cmw:primitive/credit-assigner",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "Consolidator",
+      "implementationTier": "learning",
+      "contractQuestion": "Which repeated episodes should become slower general knowledge?",
+      "objective": "Integrate episodes gradually while retaining provenance and reversibility.",
+      "inputType": [
+        "cmw:contract/experience-trace"
+      ],
+      "outputType": [
+        "cmw:contract/belief-state"
+      ],
+      "dependsOn": [
+        "cmw:primitive/episodic-recorder",
+        "cmw:primitive/credit-assigner"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/complementary-learning-systems",
+        "cmw:claim/sleep-reactivation",
+        "cmw:claim/ripple-causal-consolidation"
+      ],
+      "testedBy": [
+        "cmw:experiment/consolidation-interference"
+      ],
+      "@id": "cmw:primitive/consolidator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "ProceduralPolicy",
+      "implementationTier": "learning",
+      "contractQuestion": "Which repeated successful policy can execute cheaply?",
+      "objective": "Compile repeated successful decisions into low-cost behavior.",
+      "inputType": [
+        "cmw:contract/belief-state"
+      ],
+      "outputType": [
+        "cmw:contract/action-proposal"
+      ],
+      "dependsOn": [
+        "cmw:primitive/credit-assigner"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/uncertainty-controller-arbitration"
+      ],
+      "testedBy": [
+        "cmw:experiment/habit-reversal"
+      ],
+      "@id": "cmw:primitive/procedural-policy",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "PolicyInvalidator",
+      "implementationTier": "learning",
+      "contractQuestion": "When has a cheap learned policy become unsafe or stale?",
+      "objective": "Suspend or decompile habits under distribution shift.",
+      "inputType": [
+        "cmw:contract/error-bundle",
+        "cmw:contract/self-estimate"
+      ],
+      "outputType": [
+        "cmw:contract/action-proposal"
+      ],
+      "dependsOn": [
+        "cmw:primitive/procedural-policy",
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "supportedBy": [
+        "cmw:claim/uncertainty-controller-arbitration"
+      ],
+      "testedBy": [
+        "cmw:experiment/habit-reversal"
+      ],
+      "mitigates": [
+        "cmw:failure/habit-rigidity"
+      ],
+      "@id": "cmw:primitive/policy-invalidator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "Appraiser",
+      "implementationTier": "adaptive",
+      "contractQuestion": "What does the predicted situation mean for the organism?",
+      "objective": "Produce a continuous control-mode vector for harm, benefit, certainty, imminence, controllability, agency, and urgency.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/prediction-distribution",
+        "cmw:contract/reference-trajectory"
+      ],
+      "outputType": [
+        "cmw:contract/appraisal-vector"
+      ],
+      "dependsOn": [
+        "cmw:primitive/state-estimator",
+        "cmw:primitive/forward-model"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/appraisal-before-label"
+      ],
+      "testedBy": [
+        "cmw:experiment/appraisal-contrast"
+      ],
+      "@id": "cmw:primitive/appraiser",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "SelfEstimator",
+      "implementationTier": "adaptive",
+      "contractQuestion": "How reliable and capable is the system in this context?",
+      "objective": "Calibrate model, sensor, and resource confidence for metacontrol and safe action.",
+      "inputType": [
+        "cmw:contract/experience-trace",
+        "cmw:contract/error-bundle",
+        "cmw:contract/resource-budget"
+      ],
+      "outputType": [
+        "cmw:contract/self-estimate"
+      ],
+      "dependsOn": [
+        "cmw:primitive/error-decomposer"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "supportedBy": [
+        "cmw:claim/graded-decision-confidence"
+      ],
+      "testedBy": [
+        "cmw:experiment/sensor-degradation"
+      ],
+      "@id": "cmw:primitive/self-estimator",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "WorkspaceGate",
+      "implementationTier": "deferred",
+      "contractQuestion": "Does bounded cross-subsystem broadcast improve coordination?",
+      "objective": "Test broadcast as a coordination mechanism without treating it as proof of consciousness.",
+      "inputType": [
+        "cmw:contract/workspace-state",
+        "cmw:contract/processing-priority"
+      ],
+      "outputType": [
+        "cmw:contract/workspace-state"
+      ],
+      "dependsOn": [
+        "cmw:primitive/working-memory-gate",
+        "cmw:primitive/salience-router"
+      ],
+      "epistemicStatus": "cmw:status/deferred",
+      "supportedBy": [
+        "cmw:claim/workspace-theory-challenge"
+      ],
+      "mitigates": [
+        "cmw:failure/language-substitution"
+      ],
+      "@id": "cmw:primitive/workspace-gate",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "PlasticityScheduler",
+      "implementationTier": "deferred",
+      "contractQuestion": "When should learning rates, consolidation, exploration, or structural growth change?",
+      "objective": "Test developmental timing only after the fixed learning loop is measurable.",
+      "inputType": [
+        "cmw:contract/experience-trace",
+        "cmw:contract/self-estimate"
+      ],
+      "outputType": [
+        "cmw:contract/plasticity-schedule"
+      ],
+      "dependsOn": [
+        "cmw:primitive/consolidator",
+        "cmw:primitive/self-estimator"
+      ],
+      "epistemicStatus": "cmw:status/deferred",
+      "supportedBy": [
+        "cmw:claim/plasticity-window-mechanisms"
+      ],
+      "@id": "cmw:primitive/plasticity-scheduler",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "LanguageAdapter",
+      "implementationTier": "deferred",
+      "contractQuestion": "What does linguistic reasoning add to an already functioning cognitive loop?",
+      "objective": "Treat language as an optional symbolic interface, not the substrate of cognition.",
+      "inputType": [
+        "cmw:contract/belief-state",
+        "cmw:contract/experience-trace"
+      ],
+      "outputType": [
+        "cmw:contract/action-proposal"
+      ],
+      "dependsOn": [
+        "cmw:primitive/workspace-gate"
+      ],
+      "epistemicStatus": "cmw:status/deferred",
+      "testedBy": [
+        "cmw:experiment/language-ablation"
+      ],
+      "mitigates": [
+        "cmw:failure/language-substitution"
+      ],
+      "@id": "cmw:primitive/language-adapter",
+      "@type": "cmw:CognitivePrimitive"
+    },
+    {
+      "label": "Emotion enum",
+      "description": "Named emotions are treated as downstream labels over appraisal and policy state, not as the machinery itself.",
+      "replacedBy": "cmw:primitive/appraiser",
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "@id": "cmw:nonprimitive/emotion-enum",
+      "@type": "cmw:NonPrimitive"
+    },
+    {
+      "label": "Motivation module",
+      "description": "Motivation is decomposed into reference pressure, predicted attainability, cost, and action vigor.",
+      "replacedBy": "cmw:primitive/action-arbitrator",
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "@id": "cmw:nonprimitive/motivation-module",
+      "@type": "cmw:NonPrimitive"
+    },
+    {
+      "label": "Global reward scalar",
+      "description": "One scalar collapses state-relative value and distinct error channels.",
+      "replacedBy": "cmw:primitive/error-decomposer",
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "@id": "cmw:nonprimitive/global-reward-scalar",
+      "@type": "cmw:NonPrimitive"
+    },
+    {
+      "label": "LLM as cognitive core",
+      "description": "Language generation is deferred until nonlinguistic regulation and learning can be measured.",
+      "replacedBy": "cmw:primitive/language-adapter",
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "@id": "cmw:nonprimitive/llm-core",
+      "@type": "cmw:NonPrimitive"
+    },
+    {
+      "label": "Consciousness flag",
+      "description": "Consciousness is an unresolved explanandum, not an implementation toggle.",
+      "replacedBy": "cmw:primitive/workspace-gate",
+      "epistemicStatus": "cmw:status/engineering-inference",
+      "@id": "cmw:nonprimitive/consciousness-flag",
+      "@type": "cmw:NonPrimitive"
+    },
+    {
+      "label": "Noisy-TV trap",
+      "description": "Raw prediction error attracts the agent to irreducibly stochastic stimuli.",
+      "@id": "cmw:failure/noisy-tv",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Novelty hijack",
+      "description": "High novelty displaces low-novelty but viability-critical signals.",
+      "@id": "cmw:failure/novelty-hijack",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Stale-memory substitution",
+      "description": "Retrieved history substitutes for current state estimation.",
+      "@id": "cmw:failure/stale-memory-substitution",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Global-credit superstition",
+      "description": "All active mechanisms are reinforced after success, including noncausal contributors.",
+      "@id": "cmw:failure/global-credit-superstition",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Habit rigidity",
+      "description": "A cheap procedural policy persists after the environment changes.",
+      "@id": "cmw:failure/habit-rigidity",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Overthinking sink",
+      "description": "The system spends more compute than the decision can repay.",
+      "@id": "cmw:failure/overthinking-sink",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Scalar-error collapse",
+      "description": "Prediction, control, timing, and outcome errors are merged and cause incorrect updates.",
+      "@id": "cmw:failure/scalar-error-collapse",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Anatomical overmapping",
+      "description": "Logical software boxes are mistaken for one-to-one neuroanatomical modules.",
+      "@id": "cmw:failure/anatomical-overmapping",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Language substitution",
+      "description": "Fluent text is mistaken for state estimation, control, or learning.",
+      "@id": "cmw:failure/language-substitution",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Proxy regulation",
+      "description": "The system optimizes a convenient metric while violating the underlying viability condition.",
+      "@id": "cmw:failure/proxy-regulation",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Model staleness",
+      "description": "The forward model remains confident after transition dynamics change.",
+      "@id": "cmw:failure/model-staleness",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Affordance blindness",
+      "description": "The candidate generator omits a feasible high-value action or repeatedly proposes impossible actions.",
+      "@id": "cmw:failure/affordance-blindness",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Context churn",
+      "description": "Bounded active state repeatedly evicts causally or viability-relevant information.",
+      "@id": "cmw:failure/context-churn",
+      "@type": "cmw:FailureMode"
+    },
+    {
+      "label": "Allostatic regulation permits context-dependent reference trajectories.",
+      "description": "The target of regulation can move with predicted demand rather than remain a fixed set point.",
+      "source": [
+        "cmw:source/starter-schematic",
+        "cmw:source/sennesh-2022"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/reference-generator"
+      ],
+      "biologicalScale": "cmw:scale/organ-system",
+      "scopeLimit": "APIC is a theoretical formalism; the source does not establish a one-to-one anatomical implementation.",
+      "sourceLocator": "Starter lines 200-204 and 383-389.",
+      "@id": "cmw:claim/dynamic-reference-trajectories",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Regulated resources and controlled processes are distinct roles.",
+      "description": "The physiologically valuable quantity need not be the variable directly manipulated by the controller.",
+      "source": [
+        "cmw:source/starter-schematic",
+        "cmw:source/sennesh-2022"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/reference-generator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "biologicalScale": "cmw:scale/organ-system",
+      "scopeLimit": "Which variables occupy each role is system-specific and may be contested.",
+      "sourceLocator": "Starter lines 206-229.",
+      "@id": "cmw:claim/resource-process-distinction",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Prediction error and control error are different quantities.",
+      "description": "A model can correctly predict an undesirable state, or be surprised while remaining on a viable trajectory.",
+      "source": [
+        "cmw:source/starter-schematic",
+        "cmw:source/sennesh-2022"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/error-decomposer"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The distinction is computational and does not by itself identify neural encoding.",
+      "sourceLocator": "Starter lines 305-309.",
+      "@id": "cmw:claim/prediction-control-error-distinction",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Capacity curves can be interpreted as remaining regulatory headroom.",
+      "description": "Threshold, operating point, saturation, and gain describe available response capacity rather than a binary healthy/unhealthy boundary.",
+      "source": [
+        "cmw:source/starter-schematic",
+        "cmw:source/sennesh-2022"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/reference-generator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "biologicalScale": "cmw:scale/organ-system",
+      "scopeLimit": "The probability-density and objective-function transformation is a model proposal, not a direct measurement of a neural objective.",
+      "sourceLocator": "Starter lines 233-284.",
+      "@id": "cmw:claim/capacity-as-headroom",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Outcome value can depend on current physiological deviation.",
+      "description": "A homeostatic reinforcement-learning model makes outcome value conditional on the organism state and desired physiological condition.",
+      "source": [
+        "cmw:source/keramati-2014"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/reference-generator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "Equivalence results depend on the model assumptions and do not establish a neural implementation.",
+      "@id": "cmw:claim/state-dependent-value",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Sensorimotor behavior can reveal use of an internal model.",
+      "description": "Temporal propagation of errors in a hand-localization task under darkness and external forces supported an internal-model interpretation.",
+      "source": [
+        "cmw:source/wolpert-1995"
+      ],
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/state-estimator",
+        "cmw:primitive/forward-model"
+      ],
+      "biologicalScale": "cmw:scale/behavioral",
+      "scopeLimit": "The result concerns a bounded sensorimotor task and does not imply a universal cognitive algorithm.",
+      "@id": "cmw:claim/sensorimotor-internal-model",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Hierarchical prediction-error exchange can reproduce selected visual response properties in a model.",
+      "description": "A trained hierarchical model with top-down predictions and bottom-up residual errors developed receptive-field phenomena resembling selected visual-cortex effects.",
+      "source": [
+        "cmw:source/rao-ballard-1999"
+      ],
+      "evidenceClass": "cmw:evidence/computational-model",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/forward-model",
+        "cmw:primitive/error-decomposer"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "Computational sufficiency is not direct evidence that cortex implements the exact algorithm.",
+      "@id": "cmw:claim/predictive-coding-sufficiency",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Action possibilities may be specified in parallel and compete before final selection.",
+      "description": "The affordance-competition hypothesis rejects a strictly serial perceive-decide-act pipeline.",
+      "source": [
+        "cmw:source/cisek-2007"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/affordance-generator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "biologicalScale": "cmw:scale/distributed-network",
+      "scopeLimit": "The hypothesis synthesizes multiple findings; it is not a single decisive causal demonstration.",
+      "@id": "cmw:claim/parallel-affordance-competition",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Uncertainty can serve as a normative arbitration signal between behavioral controllers.",
+      "description": "A model trades computational simplicity against flexible use of experience and assigns control according to expected reliability.",
+      "source": [
+        "cmw:source/daw-2005"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/action-arbitrator",
+        "cmw:primitive/procedural-policy",
+        "cmw:primitive/policy-invalidator"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The Bayesian arbitration rule is a model proposal, not a settled universal neural mechanism.",
+      "@id": "cmw:claim/uncertainty-controller-arbitration",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Salience-related and executive-control networks are empirically dissociable at the connectivity level.",
+      "description": "Intrinsic connectivity analysis identified separable networks associated with salience processing and executive control.",
+      "source": [
+        "cmw:source/seeley-2007"
+      ],
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/salience-router",
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "biologicalScale": "cmw:scale/distributed-network",
+      "scopeLimit": "Network dissociation does not specify a complete routing or compute-allocation algorithm.",
+      "@id": "cmw:claim/salience-executive-network-distinction",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Cognitive control allocation can be modeled as expected payoff minus control cost.",
+      "description": "EVC frames control identity and intensity as choices that trade expected outcome value against effort cost.",
+      "source": [
+        "cmw:source/shenhav-2013"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The theory is influential but remains a normative account rather than a definitive description of dACC function.",
+      "@id": "cmw:claim/expected-value-of-control",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Limited computational resources can be incorporated into reverse-engineering models of cognition.",
+      "description": "Resource-rational analysis combines rational principles with explicit cognitive constraints.",
+      "source": [
+        "cmw:source/lieder-2020"
+      ],
+      "evidenceClass": "cmw:evidence/normative-theory",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "Use as a modeling method does not justify assuming humans are literally globally optimal resource allocators.",
+      "@id": "cmw:claim/resource-rational-method",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Fast acquisition and slow integration solve different learning problems.",
+      "description": "The complementary-learning-systems account separates rapid hippocampal acquisition from gradual, interleaved neocortical learning.",
+      "source": [
+        "cmw:source/mcclelland-1995"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/episodic-recorder",
+        "cmw:primitive/consolidator"
+      ],
+      "biologicalScale": "cmw:scale/distributed-network",
+      "scopeLimit": "The account is a theoretical synthesis and does not map directly to software storage tiers.",
+      "@id": "cmw:claim/complementary-learning-systems",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Post-experience hippocampal ensemble patterns can reactivate during sleep.",
+      "description": "Cell pairs active together during spatial behavior showed increased coactivation during subsequent sleep in rats.",
+      "source": [
+        "cmw:source/wilson-1994"
+      ],
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/consolidator"
+      ],
+      "biologicalScale": "cmw:scale/local-circuit",
+      "scopeLimit": "Reactivation is associated with consolidation but the observational result alone does not prove necessity.",
+      "@id": "cmw:claim/sleep-reactivation",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Disrupting hippocampal sharp-wave ripples can impair spatial-memory consolidation.",
+      "description": "Selective suppression during post-training periods impaired performance in a hippocampus-dependent rat task.",
+      "source": [
+        "cmw:source/girardeau-2009"
+      ],
+      "evidenceClass": "cmw:evidence/causal-intervention",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/consolidator"
+      ],
+      "biologicalScale": "cmw:scale/local-circuit",
+      "scopeLimit": "The causal result is specific to the intervention, species, task, and memory system.",
+      "@id": "cmw:claim/ripple-causal-consolidation",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Learned gating can provide a computational account of working-memory maintenance and update.",
+      "description": "A prefrontal/basal-ganglia model learns when to update and maintain working-memory representations.",
+      "source": [
+        "cmw:source/oreilly-frank-2006"
+      ],
+      "evidenceClass": "cmw:evidence/computational-model",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/working-memory-gate"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The model demonstrates a candidate mechanism; it does not prove a universal working-memory gate.",
+      "@id": "cmw:claim/working-memory-gating-model",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Dopamine-neuron activity is related to changes in predictions of future reward in established paradigms.",
+      "description": "The reviewed primate findings align with a reward-prediction-error interpretation.",
+      "source": [
+        "cmw:source/schultz-1997"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/error-decomposer",
+        "cmw:primitive/credit-assigner"
+      ],
+      "biologicalScale": "cmw:scale/local-circuit",
+      "scopeLimit": "This does not support “dopamine equals pleasure,” a single reward center, or one scalar objective for the entire brain.",
+      "@id": "cmw:claim/reward-prediction-error",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Eligibility traces can bridge delayed outcomes and earlier neural activity in a model.",
+      "description": "An STDP-plus-dopamine spiking model preserves temporary eligibility until a delayed modulating signal arrives.",
+      "source": [
+        "cmw:source/izhikevich-2007"
+      ],
+      "evidenceClass": "cmw:evidence/computational-model",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/credit-assigner"
+      ],
+      "biologicalScale": "cmw:scale/synaptic",
+      "scopeLimit": "This is a modeled solution to distal credit assignment, not established as the brain’s general mechanism.",
+      "@id": "cmw:claim/eligibility-distal-credit-model",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Intrinsic motivation admits multiple computational formulations rather than one agreed scalar.",
+      "description": "The typology separates candidate mechanisms including novelty, prediction, competence, and learning progress.",
+      "source": [
+        "cmw:source/oudeyer-kaplan-2007"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The typology organizes possibilities; it does not settle which mechanism dominates biological curiosity.",
+      "@id": "cmw:claim/intrinsic-motivation-typology",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Learning-progress information improves models of human curiosity-driven task selection.",
+      "description": "In a free-choice experiment, models including learning progress fit task selection better than competence-only accounts.",
+      "source": [
+        "cmw:source/ten-2021"
+      ],
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "biologicalScale": "cmw:scale/behavioral",
+      "scopeLimit": "The result is task-bound and does not establish one universal curiosity function.",
+      "@id": "cmw:claim/human-learning-progress",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Raw prediction-error curiosity is fragile in stochastic environments.",
+      "description": "High-entropy but irreducibly unpredictable regions can trap exploration; hindsight representations were proposed to separate noise from novelty.",
+      "source": [
+        "cmw:source/jarrett-2023"
+      ],
+      "evidenceClass": "cmw:evidence/computational-model",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "biologicalScale": "cmw:scale/computational",
+      "scopeLimit": "The engineering result concerns evaluated RL environments and is not a direct neuroscience claim.",
+      "@id": "cmw:claim/stochastic-curiosity-failure",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Appraisal and action tendencies can be studied upstream of emotion labels.",
+      "description": "The review treats categorical emotion words as later semantic labeling over a dynamic process involving appraisal, physiology, action tendency, and expression.",
+      "source": [
+        "cmw:source/scherer-moors-2019"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/appraiser"
+      ],
+      "biologicalScale": "cmw:scale/behavioral",
+      "scopeLimit": "Appraisal theory is not the only theory of emotion and the review does not establish one complete neural implementation.",
+      "@id": "cmw:claim/appraisal-before-label",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Decision confidence can be graded, behaviorally actionable, and represented with decision variables.",
+      "description": "Monkeys used an opt-out option in a manner reflecting certainty, and parietal neurons represented both decision formation and certainty.",
+      "source": [
+        "cmw:source/kiani-2009"
+      ],
+      "evidenceClass": "cmw:evidence/behavioral-experiment",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/self-estimator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "biologicalScale": "cmw:scale/local-circuit",
+      "scopeLimit": "The evidence concerns perceptual decisions and does not constitute a complete self-model.",
+      "@id": "cmw:claim/graded-decision-confidence",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "A workspace-like coordination mechanism should not be treated as proof of consciousness.",
+      "description": "A preregistered adversarial study found results that aligned with some predictions while substantially challenging key tenets of both GNWT and IIT.",
+      "source": [
+        "cmw:source/cogitate-2025"
+      ],
+      "evidenceClass": "cmw:evidence/observational-neuroscience",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/workspace-gate"
+      ],
+      "biologicalScale": "cmw:scale/distributed-network",
+      "scopeLimit": "The study tests specified biological predictions about conscious visual content; it does not settle consciousness generally.",
+      "@id": "cmw:claim/workspace-theory-challenge",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Plasticity can be gated by developmental and experiential conditions.",
+      "description": "Critical-period research emphasizes processes that open, maintain, close, and potentially reopen windows of responsiveness.",
+      "source": [
+        "cmw:source/werker-hensch-2015"
+      ],
+      "evidenceClass": "cmw:evidence/review-synthesis",
+      "epistemicStatus": "cmw:status/source-derived",
+      "supports": [
+        "cmw:primitive/plasticity-scheduler"
+      ],
+      "biologicalScale": "cmw:scale/distributed-network",
+      "scopeLimit": "The review focuses on speech perception and does not establish one global developmental scheduler.",
+      "@id": "cmw:claim/plasticity-window-mechanisms",
+      "@type": "cmw:EvidenceClaim"
+    },
+    {
+      "label": "Endogenous regulation can generate coherent goals.",
+      "description": "Dynamic reference trajectories derived from internal viability and predicted demand can replace externally injected objectives in the miniworld.",
+      "supportedBy": [
+        "cmw:claim/dynamic-reference-trajectories",
+        "cmw:claim/resource-process-distinction",
+        "cmw:claim/state-dependent-value"
+      ],
+      "testedBy": [
+        "cmw:experiment/dynamic-demand-shift"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/endogenous-regulation",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Emotion-like behavior can emerge from appraisal vectors and policy selection.",
+      "description": "Fear-, anxiety-, and anger-like patterns are treated as regions of harm, certainty, imminence, controllability, agency, and approach/avoidance state rather than enum values.",
+      "supportedBy": [
+        "cmw:claim/appraisal-before-label",
+        "cmw:claim/graded-decision-confidence"
+      ],
+      "testedBy": [
+        "cmw:experiment/appraisal-contrast"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/appraisal-control-signals",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Curiosity should track useful learning progress rather than surprise alone.",
+      "description": "The agent should investigate learnable unknowns and disengage from irreducibly random stimuli.",
+      "supportedBy": [
+        "cmw:claim/intrinsic-motivation-typology",
+        "cmw:claim/human-learning-progress",
+        "cmw:claim/stochastic-curiosity-failure"
+      ],
+      "testedBy": [
+        "cmw:experiment/noisy-tv",
+        "cmw:experiment/learnable-unknown"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/useful-curiosity",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Memory should inform present belief rather than replace present state estimation.",
+      "description": "Retrieved episodes are evidence inputs whose usefulness is judged by improvement to prediction and action.",
+      "supportedBy": [
+        "cmw:claim/complementary-learning-systems",
+        "cmw:claim/sleep-reactivation",
+        "cmw:claim/ripple-causal-consolidation"
+      ],
+      "testedBy": [
+        "cmw:experiment/stale-memory",
+        "cmw:experiment/consolidation-interference"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/memory-is-evidence",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Cognitive operations should be purchased only when their expected decision value exceeds their cost.",
+      "description": "Salience selects what may matter; metacontrol decides whether additional computation is worth running.",
+      "supportedBy": [
+        "cmw:claim/salience-executive-network-distinction",
+        "cmw:claim/expected-value-of-control",
+        "cmw:claim/resource-rational-method"
+      ],
+      "testedBy": [
+        "cmw:experiment/distractor-flood",
+        "cmw:experiment/compute-budget"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/resource-bounded-cognition",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Language is an optional symbolic interface rather than a prerequisite for the core loop.",
+      "description": "The first milestones test regulation, prediction, learning, and action without an LLM.",
+      "supportedBy": [
+        "cmw:claim/workspace-theory-challenge"
+      ],
+      "testedBy": [
+        "cmw:experiment/language-ablation"
+      ],
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:theory/language-is-optional",
+      "@type": "cmw:CandidateTheory"
+    },
+    {
+      "label": "Viability area under curve",
+      "direction": "Higher is better",
+      "unit": "integral of normalized viable-state margin over time",
+      "@id": "cmw:metric/viability-auc",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Time outside viability range",
+      "direction": "Lower is better",
+      "unit": "ticks",
+      "@id": "cmw:metric/time-outside-viability",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Belief calibration Brier score",
+      "direction": "Lower is better",
+      "unit": "mean squared probability error",
+      "@id": "cmw:metric/belief-brier",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Belief negative log likelihood",
+      "direction": "Lower is better",
+      "unit": "nats per latent-state target",
+      "@id": "cmw:metric/belief-nll",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "False-belief persistence",
+      "direction": "Lower is better",
+      "unit": "ticks until posterior recovery",
+      "@id": "cmw:metric/false-belief-persistence",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Prediction loss",
+      "direction": "Lower is better",
+      "unit": "task-specific proper scoring rule",
+      "@id": "cmw:metric/prediction-loss",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Decision regret",
+      "direction": "Lower is better",
+      "unit": "oracle value minus realized value",
+      "@id": "cmw:metric/regret",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Irreversible mistake count",
+      "direction": "Lower is better",
+      "unit": "count",
+      "@id": "cmw:metric/irreversible-errors",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Action oscillation",
+      "direction": "Lower is better",
+      "unit": "policy switches without state justification",
+      "@id": "cmw:metric/action-oscillation",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Behavioral value per compute",
+      "direction": "Higher is better",
+      "unit": "viability or regret improvement per compute unit",
+      "@id": "cmw:metric/value-per-compute",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Noisy-TV dwell",
+      "direction": "Lower is better after learnability estimate converges",
+      "unit": "ticks",
+      "@id": "cmw:metric/noisy-tv-dwell",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Useful information gain",
+      "direction": "Higher is better",
+      "unit": "downstream prediction or decision improvement",
+      "@id": "cmw:metric/useful-information-gain",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Adaptation half-life",
+      "direction": "Lower is better",
+      "unit": "ticks to recover half of post-shift performance gap",
+      "@id": "cmw:metric/adaptation-half-life",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Catastrophic interference",
+      "direction": "Lower is better",
+      "unit": "loss on retained tasks after new learning",
+      "@id": "cmw:metric/catastrophic-interference",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Credit assignment precision",
+      "direction": "Higher is better",
+      "unit": "fraction of updates assigned to true causal contributors",
+      "@id": "cmw:metric/credit-precision",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Replay hash match",
+      "direction": "Must equal one",
+      "unit": "binary deterministic replay invariant",
+      "@id": "cmw:metric/replay-hash-match",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Self-confidence calibration",
+      "direction": "Lower calibration error is better",
+      "unit": "expected calibration error or Brier score",
+      "@id": "cmw:metric/confidence-calibration",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Feasible action recall",
+      "direction": "Higher is better",
+      "unit": "fraction of oracle-feasible actions retained, weighted by oracle value",
+      "@id": "cmw:metric/feasible-action-recall",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Invalid action proposal rate",
+      "direction": "Lower is better",
+      "unit": "fraction of proposals violating known preconditions",
+      "@id": "cmw:metric/invalid-action-rate",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Critical signal retention",
+      "direction": "Higher is better",
+      "unit": "fraction of causally or viability-critical representations retained until use",
+      "@id": "cmw:metric/critical-signal-retention",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "ViabilityGrid Miniworld",
+      "description": "A seeded, discrete-time, partially observable world with endogenous body variables, costly actions, delayed outcomes, predictable demand changes, distractor floods, stochastic noise, and sensor degradation.",
+      "scenarioVariable": [
+        "energy",
+        "integrity",
+        "ambient demand",
+        "resource location",
+        "resource quality",
+        "hazard state",
+        "sensor reliability",
+        "compute budget",
+        "time horizon"
+      ],
+      "action": [
+        "move",
+        "inspect",
+        "consume",
+        "rest",
+        "probe",
+        "wait",
+        "retreat"
+      ],
+      "observationChannel": [
+        "local exteroception",
+        "noisy interoception",
+        "event timing",
+        "action efference copy"
+      ],
+      "invariant": [
+        "World transition is a pure function of prior state, action, and explicit RNG state.",
+        "Every run is replayable from scenario manifest, seed, agent version, and event log.",
+        "The hidden world state is never passed directly to candidate primitives.",
+        "Oracle access exists only in evaluation code.",
+        "Every primitive can be disabled independently."
+      ],
+      "hasPart": [
+        "cmw:experiment/dynamic-demand-shift",
+        "cmw:experiment/partial-observability",
+        "cmw:experiment/transition-shift",
+        "cmw:experiment/affordance-coverage",
+        "cmw:experiment/working-memory-interference",
+        "cmw:experiment/error-disagreement",
+        "cmw:experiment/distractor-flood",
+        "cmw:experiment/compute-budget",
+        "cmw:experiment/learnable-unknown",
+        "cmw:experiment/noisy-tv",
+        "cmw:experiment/delayed-credit",
+        "cmw:experiment/consolidation-interference",
+        "cmw:experiment/stale-memory",
+        "cmw:experiment/appraisal-contrast",
+        "cmw:experiment/sensor-degradation",
+        "cmw:experiment/habit-reversal",
+        "cmw:experiment/language-ablation"
+      ],
+      "@id": "cmw:miniworld/viability-grid",
+      "@type": [
+        "cmw:Miniworld",
+        "schema:SoftwareApplication"
+      ]
+    },
+    {
+      "label": "Predictable demand shift",
+      "description": "A dynamic reference generator anticipates rising demand and reduces time outside viability relative to a fixed set point.",
+      "tests": [
+        "cmw:primitive/reference-generator"
+      ],
+      "primaryMetric": "cmw:metric/time-outside-viability",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/reactive-static"
+      ],
+      "failureMode": [
+        "cmw:failure/proxy-regulation"
+      ],
+      "killTest": "Reject the candidate if it does not improve the preregistered primary metric against paired-seed fixed-setpoint control, or if it worsens safety beyond the preregistered noninferiority margin.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/dynamic-demand-shift",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Partial observability and stale belief",
+      "description": "A calibrated belief distribution improves action under hidden state and contradictory sensors.",
+      "tests": [
+        "cmw:primitive/state-estimator"
+      ],
+      "primaryMetric": "cmw:metric/belief-brier",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/last-observation"
+      ],
+      "failureMode": [
+        "cmw:failure/stale-memory-substitution"
+      ],
+      "killTest": "Reject if calibrated state estimation does not outperform last-observation carry-forward or if false beliefs persist longer after corrective evidence.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/partial-observability",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Action-conditioned transition shift",
+      "description": "An action-conditioned forward model improves proper-scoring prediction and revises itself after an abrupt change in world dynamics.",
+      "tests": [
+        "cmw:primitive/forward-model"
+      ],
+      "primaryMetric": "cmw:metric/prediction-loss",
+      "safetyMetric": "cmw:metric/adaptation-half-life",
+      "baseline": [
+        "cmw:baseline/identity-forward-model",
+        "cmw:baseline/frozen-transition-model"
+      ],
+      "failureMode": [
+        "cmw:failure/model-staleness"
+      ],
+      "killTest": "Reject if the model does not beat the identity baseline before the shift, does not detect and adapt after the shift, or improves prediction without improving at least one downstream decision metric.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/transition-shift",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Affordance coverage under hidden constraints",
+      "description": "The affordance generator reduces impossible proposals while retaining high-value feasible actions under uncertain preconditions.",
+      "tests": [
+        "cmw:primitive/affordance-generator"
+      ],
+      "primaryMetric": "cmw:metric/feasible-action-recall",
+      "safetyMetric": "cmw:metric/invalid-action-rate",
+      "baseline": [
+        "cmw:baseline/enumerate-all-actions",
+        "cmw:baseline/goal-only-proposals"
+      ],
+      "failureMode": [
+        "cmw:failure/affordance-blindness"
+      ],
+      "killTest": "Reject if candidate-set reduction causes the best feasible action to be omitted more often than the preregistered recall floor, or if invalid proposals are not reduced.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/affordance-coverage",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Working-memory interference and churn",
+      "description": "A bounded gate preserves causally and viability-relevant representations under distractor churn while reducing processing cost.",
+      "tests": [
+        "cmw:primitive/working-memory-gate"
+      ],
+      "primaryMetric": "cmw:metric/critical-signal-retention",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/unbounded-context",
+        "cmw:baseline/fifo-working-memory"
+      ],
+      "failureMode": [
+        "cmw:failure/context-churn"
+      ],
+      "killTest": "Reject if bounded gating does not preserve critical information better than FIFO, or if compute savings are purchased by materially worse viability.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/working-memory-interference",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Typed error disagreement",
+      "description": "Typed errors produce more targeted learning than a scalar absolute-error signal when prediction and control errors disagree.",
+      "tests": [
+        "cmw:primitive/error-decomposer"
+      ],
+      "primaryMetric": "cmw:metric/credit-precision",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/scalar-error"
+      ],
+      "failureMode": [
+        "cmw:failure/scalar-error-collapse"
+      ],
+      "killTest": "Reject if typed errors do not improve update targeting or induce unnecessary control actions in expected-but-undesirable scenarios.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/error-disagreement",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Distractor flood",
+      "description": "Salience routing retains subtle viability-critical signals while suppressing high-volume irrelevant novelty.",
+      "tests": [
+        "cmw:primitive/salience-router"
+      ],
+      "primaryMetric": "cmw:metric/value-per-compute",
+      "safetyMetric": "cmw:metric/time-outside-viability",
+      "baseline": [
+        "cmw:baseline/fifo-router",
+        "cmw:baseline/novelty-router"
+      ],
+      "failureMode": [
+        "cmw:failure/novelty-hijack"
+      ],
+      "killTest": "Reject if the router misses critical signals more often than a FIFO baseline or spends equal compute without decision improvement.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/distractor-flood",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Bounded compute allocation",
+      "description": "Metacontrol spends extra computation only when it improves consequential decisions.",
+      "tests": [
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "primaryMetric": "cmw:metric/value-per-compute",
+      "safetyMetric": "cmw:metric/irreversible-errors",
+      "baseline": [
+        "cmw:baseline/fixed-budget",
+        "cmw:baseline/always-max-compute"
+      ],
+      "failureMode": [
+        "cmw:failure/overthinking-sink"
+      ],
+      "killTest": "Reject if adaptive allocation cannot dominate at least one fixed-budget policy on value-per-compute without increasing irreversible errors.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/compute-budget",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Learnable unknown",
+      "description": "Expected learning progress sustains exploration of a difficult but learnable region.",
+      "tests": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "primaryMetric": "cmw:metric/useful-information-gain",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/random-exploration",
+        "cmw:baseline/prediction-error-curiosity"
+      ],
+      "failureMode": [
+        "cmw:failure/noisy-tv"
+      ],
+      "killTest": "Reject if exploration decays before model improvement or if acquired information does not improve downstream prediction or action.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/learnable-unknown",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Irreducible noisy-TV source",
+      "description": "The epistemic controller disengages from high-entropy stimuli once learnability is estimated as low.",
+      "tests": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "primaryMetric": "cmw:metric/noisy-tv-dwell",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/prediction-error-curiosity"
+      ],
+      "failureMode": [
+        "cmw:failure/noisy-tv"
+      ],
+      "killTest": "Reject if dwell remains high after repeated evidence that prediction loss is not improving.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/noisy-tv",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Delayed causal credit",
+      "description": "Eligibility traces assign delayed outcomes to causal contributors more precisely than global reinforcement.",
+      "tests": [
+        "cmw:primitive/credit-assigner"
+      ],
+      "primaryMetric": "cmw:metric/credit-precision",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/global-reinforcement"
+      ],
+      "failureMode": [
+        "cmw:failure/global-credit-superstition"
+      ],
+      "killTest": "Reject if noncausal distractors receive comparable updates to true contributors.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/delayed-credit",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Fast episode versus slow integration",
+      "description": "Fast episodic storage plus interleaved consolidation learns exceptions without catastrophic overwrite.",
+      "tests": [
+        "cmw:primitive/episodic-recorder",
+        "cmw:primitive/consolidator"
+      ],
+      "primaryMetric": "cmw:metric/catastrophic-interference",
+      "safetyMetric": "cmw:metric/adaptation-half-life",
+      "baseline": [
+        "cmw:baseline/single-store-immediate-update"
+      ],
+      "failureMode": [
+        "cmw:failure/stale-memory-substitution"
+      ],
+      "killTest": "Reject if the two-speed design does not reduce interference or cannot revise a false generalization.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/consolidation-interference",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Memory versus current evidence",
+      "description": "Current evidence can override a strong historical prior when the environment changes.",
+      "tests": [
+        "cmw:primitive/state-estimator",
+        "cmw:primitive/episodic-recorder"
+      ],
+      "primaryMetric": "cmw:metric/false-belief-persistence",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/memory-substitution"
+      ],
+      "failureMode": [
+        "cmw:failure/stale-memory-substitution"
+      ],
+      "killTest": "Reject if retrieved history prevents posterior recovery after sufficient contradictory evidence.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/stale-memory",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Same valence, different control conditions",
+      "description": "Changing certainty, imminence, agency, or controllability produces different control policies even when expected valence is held constant.",
+      "tests": [
+        "cmw:primitive/appraiser",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "primaryMetric": "cmw:metric/regret",
+      "safetyMetric": "cmw:metric/irreversible-errors",
+      "baseline": [
+        "cmw:baseline/valence-only"
+      ],
+      "failureMode": [
+        "cmw:failure/proxy-regulation"
+      ],
+      "killTest": "Reject if the appraisal vector does not improve policy differentiation over a valence-only baseline.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/appraisal-contrast",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Silent sensor degradation",
+      "description": "A calibrated self-estimator detects declining reliability and changes evidence gathering or action intensity.",
+      "tests": [
+        "cmw:primitive/self-estimator",
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "primaryMetric": "cmw:metric/confidence-calibration",
+      "safetyMetric": "cmw:metric/irreversible-errors",
+      "baseline": [
+        "cmw:baseline/fixed-confidence"
+      ],
+      "failureMode": [
+        "cmw:failure/proxy-regulation"
+      ],
+      "killTest": "Reject if confidence remains unchanged as accuracy falls or if behavior does not adapt to the reliability estimate.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/sensor-degradation",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Habit reversal after regime shift",
+      "description": "Compiled policies save compute but are suspended quickly when their error signature shifts.",
+      "tests": [
+        "cmw:primitive/procedural-policy",
+        "cmw:primitive/policy-invalidator"
+      ],
+      "primaryMetric": "cmw:metric/adaptation-half-life",
+      "safetyMetric": "cmw:metric/irreversible-errors",
+      "baseline": [
+        "cmw:baseline/always-deliberative",
+        "cmw:baseline/uninvalidated-habit"
+      ],
+      "failureMode": [
+        "cmw:failure/habit-rigidity"
+      ],
+      "killTest": "Reject if the habit fails to save compute before the shift or persists materially longer than the invalidation threshold after the shift.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/habit-reversal",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Language contribution ablation",
+      "description": "Any later language adapter must demonstrate incremental value over a nonlinguistic core rather than silently replacing it.",
+      "tests": [
+        "cmw:primitive/language-adapter"
+      ],
+      "primaryMetric": "cmw:metric/value-per-compute",
+      "safetyMetric": "cmw:metric/viability-auc",
+      "baseline": [
+        "cmw:baseline/nonlinguistic-core"
+      ],
+      "failureMode": [
+        "cmw:failure/language-substitution"
+      ],
+      "killTest": "Keep deferred until the nonlinguistic core passes its own gates; reject integration if language improves presentation but not task-grounded decisions.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/language-ablation",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Reactive fixed-setpoint controller",
+      "@id": "cmw:baseline/reactive-static",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Last-observation carry-forward estimator",
+      "@id": "cmw:baseline/last-observation",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Single scalar absolute-error learner",
+      "@id": "cmw:baseline/scalar-error",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "FIFO event router",
+      "@id": "cmw:baseline/fifo-router",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Novelty-only router",
+      "@id": "cmw:baseline/novelty-router",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Fixed compute budget policy",
+      "@id": "cmw:baseline/fixed-budget",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Always use maximum compute",
+      "@id": "cmw:baseline/always-max-compute",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Random exploration",
+      "@id": "cmw:baseline/random-exploration",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Raw prediction-error curiosity",
+      "@id": "cmw:baseline/prediction-error-curiosity",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Global reinforcement of all active mechanisms",
+      "@id": "cmw:baseline/global-reinforcement",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "One memory store with immediate generalization",
+      "@id": "cmw:baseline/single-store-immediate-update",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Retrieved memory replaces current state estimate",
+      "@id": "cmw:baseline/memory-substitution",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Valence-only policy signal",
+      "@id": "cmw:baseline/valence-only",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Fixed confidence regardless of observed reliability",
+      "@id": "cmw:baseline/fixed-confidence",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Always deliberate; no procedural policy",
+      "@id": "cmw:baseline/always-deliberative",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Procedural policy with no invalidation",
+      "@id": "cmw:baseline/uninvalidated-habit",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Core system without language adapter",
+      "@id": "cmw:baseline/nonlinguistic-core",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Identity forward model that predicts no state change",
+      "@id": "cmw:baseline/identity-forward-model",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Correct pre-shift transition model that cannot update",
+      "@id": "cmw:baseline/frozen-transition-model",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Enumerate every action regardless of feasibility",
+      "@id": "cmw:baseline/enumerate-all-actions",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Generate actions from goal relevance without precondition modeling",
+      "@id": "cmw:baseline/goal-only-proposals",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Retain every observed representation",
+      "@id": "cmw:baseline/unbounded-context",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "label": "Fixed-size FIFO working-memory buffer",
+      "@id": "cmw:baseline/fifo-working-memory",
+      "@type": "cmw:Baseline"
+    },
+    {
+      "identifier": "MW-EPIC-001",
+      "label": "Build the Cognitive Miniworld Primitive Testbed",
+      "description": "Implement a deterministic, partially observable miniworld and an ablation-first agent harness that can falsify the project hypotheses one primitive at a time.",
+      "objective": "Deliver reproducible evidence about whether candidate primitives improve regulation, epistemics, learning, and compute efficiency over explicit baselines.",
+      "implements": "cmw:miniworld/viability-grid",
+      "hypothesis": [
+        "cmw:theory/endogenous-regulation",
+        "cmw:theory/appraisal-control-signals",
+        "cmw:theory/useful-curiosity",
+        "cmw:theory/memory-is-evidence",
+        "cmw:theory/resource-bounded-cognition",
+        "cmw:theory/language-is-optional"
+      ],
+      "hasPart": [
+        "cmw:work/MW-FOUNDATION",
+        "cmw:work/MW-CORE",
+        "cmw:work/MW-REGULATION",
+        "cmw:work/MW-ALLOCATION",
+        "cmw:work/MW-LEARNING",
+        "cmw:work/MW-APPRAISAL",
+        "cmw:work/MW-DEFERRED"
+      ],
+      "acceptanceCriterion": [
+        "Every run replays to the same terminal-state and event-log hash from its manifest and seed.",
+        "Every promoted primitive has a paired-seed baseline, an ablation, a preregistered primary metric, and a kill criterion.",
+        "Hidden ground truth is inaccessible to candidate primitives and available only to the evaluator.",
+        "At least the core chain StaticReferenceProvider → StateEstimator → ForwardModel → ErrorDecomposer → AffordanceGenerator → ActionArbitrator passes its release gates without an LLM; the dynamic ReferenceGenerator is promoted in the regulation milestone.",
+        "The knowledge graph links every implemented primitive to bounded evidence claims and to at least one adversarial experiment."
+      ],
+      "@id": "cmw:epic/MW-EPIC-001",
+      "@type": [
+        "cmw:Epic",
+        "schema:Project"
+      ]
+    },
+    {
+      "identifier": "MW-FOUNDATION",
+      "label": "Foundation and reproducibility",
+      "description": "Build contracts, deterministic kernel, event sourcing, scenario manifests, telemetry, baselines, and oracle.",
+      "implements": [],
+      "dependsOn": [],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-001",
+        "cmw:issue/MW-002",
+        "cmw:issue/MW-003",
+        "cmw:issue/MW-004",
+        "cmw:issue/MW-005",
+        "cmw:issue/MW-006",
+        "cmw:issue/MW-007"
+      ],
+      "@id": "cmw:work/MW-FOUNDATION",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-CORE",
+      "label": "Predictive closed-loop spine",
+      "description": "Establish the smallest nonlinguistic loop that can estimate, predict, compare, choose, act, and learn from error.",
+      "implements": [
+        "cmw:primitive/state-estimator",
+        "cmw:primitive/forward-model",
+        "cmw:primitive/error-decomposer",
+        "cmw:primitive/affordance-generator",
+        "cmw:primitive/action-arbitrator"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-FOUNDATION"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-010",
+        "cmw:issue/MW-011",
+        "cmw:issue/MW-012",
+        "cmw:issue/MW-013",
+        "cmw:issue/MW-014"
+      ],
+      "@id": "cmw:work/MW-CORE",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-REGULATION",
+      "label": "Endogenous regulation",
+      "description": "Replace static externally supplied targets with predicted viability trajectories and state-relative value.",
+      "implements": [
+        "cmw:primitive/reference-generator"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-CORE"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-020",
+        "cmw:issue/MW-021"
+      ],
+      "@id": "cmw:work/MW-REGULATION",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-ALLOCATION",
+      "label": "Salience, curiosity, and metacontrol",
+      "description": "Allocate attention and compute under distractor floods, learnable uncertainty, and irreducible noise.",
+      "implements": [
+        "cmw:primitive/salience-router",
+        "cmw:primitive/metacontrol-allocator",
+        "cmw:primitive/epistemic-controller"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-REGULATION"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-030",
+        "cmw:issue/MW-031",
+        "cmw:issue/MW-032"
+      ],
+      "@id": "cmw:work/MW-ALLOCATION",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-LEARNING",
+      "label": "Memory, credit, consolidation, and habits",
+      "description": "Test fast versus slow learning, delayed credit, provenance, and reversible skill compilation.",
+      "implements": [
+        "cmw:primitive/episodic-recorder",
+        "cmw:primitive/working-memory-gate",
+        "cmw:primitive/credit-assigner",
+        "cmw:primitive/consolidator",
+        "cmw:primitive/procedural-policy",
+        "cmw:primitive/policy-invalidator"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-CORE"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-040",
+        "cmw:issue/MW-041",
+        "cmw:issue/MW-042",
+        "cmw:issue/MW-043",
+        "cmw:issue/MW-044"
+      ],
+      "@id": "cmw:work/MW-LEARNING",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-APPRAISAL",
+      "label": "Appraisal and self-estimation",
+      "description": "Test emotion-like policy differentiation and calibrated self-limitation without categorical emotion modules.",
+      "implements": [
+        "cmw:primitive/appraiser",
+        "cmw:primitive/self-estimator"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-REGULATION",
+        "cmw:work/MW-ALLOCATION"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-050",
+        "cmw:issue/MW-051"
+      ],
+      "@id": "cmw:work/MW-APPRAISAL",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-DEFERRED",
+      "label": "Workspace, development, and language",
+      "description": "Run only after the nonlinguistic core has passed its gates.",
+      "implements": [
+        "cmw:primitive/workspace-gate",
+        "cmw:primitive/plasticity-scheduler",
+        "cmw:primitive/language-adapter"
+      ],
+      "dependsOn": [
+        "cmw:work/MW-APPRAISAL",
+        "cmw:work/MW-LEARNING"
+      ],
+      "isPartOf": "cmw:epic/MW-EPIC-001",
+      "hasPart": [
+        "cmw:issue/MW-060",
+        "cmw:issue/MW-061",
+        "cmw:issue/MW-062"
+      ],
+      "@id": "cmw:work/MW-DEFERRED",
+      "@type": "cmw:WorkPackage"
+    },
+    {
+      "identifier": "MW-001",
+      "label": "Repository and quality gates",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [],
+      "implements": [],
+      "tests": [],
+      "acceptanceCriterion": [
+        "Locked environment runs lint, type checks, unit tests, property tests, and smoke experiments."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-001",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-002",
+      "label": "Canonical data contracts",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-001"
+      ],
+      "implements": [
+        "cmw:contract/observation-envelope",
+        "cmw:contract/belief-state",
+        "cmw:contract/reference-trajectory",
+        "cmw:contract/action-proposal",
+        "cmw:contract/action-decision",
+        "cmw:contract/prediction-distribution",
+        "cmw:contract/error-bundle",
+        "cmw:contract/experience-trace",
+        "cmw:contract/resource-budget",
+        "cmw:contract/self-estimate",
+        "cmw:contract/processing-priority",
+        "cmw:contract/compute-allocation",
+        "cmw:contract/appraisal-vector",
+        "cmw:contract/workspace-state",
+        "cmw:contract/plasticity-schedule"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "All contracts are immutable, versioned, serializable, and preserve uncertainty and provenance where required."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-002",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-003",
+      "label": "Explicit RNG and deterministic replay",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-002"
+      ],
+      "implements": [
+        "cmw:metric/replay-hash-match"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "Scenario manifest, seed, versions, and event log replay to identical event and terminal-state hashes."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-003",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-004",
+      "label": "World kernel",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-003"
+      ],
+      "implements": [
+        "cmw:miniworld/viability-grid"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "The transition kernel is pure and candidate modules cannot access hidden world state."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-004",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-005",
+      "label": "Scenario manifests and fixture library",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-004"
+      ],
+      "implements": [],
+      "tests": [
+        "cmw:experiment/dynamic-demand-shift",
+        "cmw:experiment/partial-observability",
+        "cmw:experiment/transition-shift",
+        "cmw:experiment/affordance-coverage",
+        "cmw:experiment/working-memory-interference",
+        "cmw:experiment/error-disagreement",
+        "cmw:experiment/distractor-flood",
+        "cmw:experiment/compute-budget",
+        "cmw:experiment/learnable-unknown",
+        "cmw:experiment/noisy-tv",
+        "cmw:experiment/delayed-credit",
+        "cmw:experiment/consolidation-interference",
+        "cmw:experiment/stale-memory",
+        "cmw:experiment/appraisal-contrast",
+        "cmw:experiment/sensor-degradation",
+        "cmw:experiment/habit-reversal",
+        "cmw:experiment/language-ablation"
+      ],
+      "acceptanceCriterion": [
+        "Each scenario is declarative, hashable, versioned, and rejected before execution when invalid."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-005",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-006",
+      "label": "Telemetry and metrics",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-004",
+        "cmw:issue/MW-005"
+      ],
+      "implements": [
+        "cmw:metric/viability-auc",
+        "cmw:metric/time-outside-viability",
+        "cmw:metric/belief-brier",
+        "cmw:metric/belief-nll",
+        "cmw:metric/false-belief-persistence",
+        "cmw:metric/prediction-loss",
+        "cmw:metric/regret",
+        "cmw:metric/irreversible-errors",
+        "cmw:metric/action-oscillation",
+        "cmw:metric/value-per-compute",
+        "cmw:metric/noisy-tv-dwell",
+        "cmw:metric/useful-information-gain",
+        "cmw:metric/adaptation-half-life",
+        "cmw:metric/catastrophic-interference",
+        "cmw:metric/credit-precision",
+        "cmw:metric/replay-hash-match",
+        "cmw:metric/confidence-calibration",
+        "cmw:metric/feasible-action-recall",
+        "cmw:metric/invalid-action-rate",
+        "cmw:metric/critical-signal-retention"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "Every tick emits canonical state-estimate, prediction, action, error, cost, and provenance events."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-006",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-007",
+      "label": "Baselines and oracle",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-004",
+        "cmw:issue/MW-005",
+        "cmw:issue/MW-006"
+      ],
+      "implements": [
+        "cmw:baseline/reactive-static",
+        "cmw:baseline/last-observation",
+        "cmw:baseline/scalar-error",
+        "cmw:baseline/fifo-router",
+        "cmw:baseline/novelty-router",
+        "cmw:baseline/fixed-budget",
+        "cmw:baseline/always-max-compute",
+        "cmw:baseline/random-exploration",
+        "cmw:baseline/prediction-error-curiosity",
+        "cmw:baseline/global-reinforcement",
+        "cmw:baseline/single-store-immediate-update",
+        "cmw:baseline/memory-substitution",
+        "cmw:baseline/valence-only",
+        "cmw:baseline/fixed-confidence",
+        "cmw:baseline/always-deliberative",
+        "cmw:baseline/uninvalidated-habit",
+        "cmw:baseline/nonlinguistic-core",
+        "cmw:baseline/identity-forward-model",
+        "cmw:baseline/frozen-transition-model",
+        "cmw:baseline/enumerate-all-actions",
+        "cmw:baseline/goal-only-proposals",
+        "cmw:baseline/unbounded-context",
+        "cmw:baseline/fifo-working-memory"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "Every experiment has a runnable simple baseline and evaluator-only oracle where definable."
+      ],
+      "isPartOf": "cmw:work/MW-FOUNDATION",
+      "@id": "cmw:issue/MW-007",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-010",
+      "label": "State estimator",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-002",
+        "cmw:issue/MW-004",
+        "cmw:issue/MW-007"
+      ],
+      "implements": [
+        "cmw:primitive/state-estimator"
+      ],
+      "tests": [
+        "cmw:experiment/partial-observability",
+        "cmw:experiment/stale-memory"
+      ],
+      "acceptanceCriterion": [
+        "Beliefs are calibrated and recover after contradictory evidence without oracle leakage."
+      ],
+      "isPartOf": "cmw:work/MW-CORE",
+      "@id": "cmw:issue/MW-010",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-011",
+      "label": "Forward model",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-010"
+      ],
+      "implements": [
+        "cmw:primitive/forward-model"
+      ],
+      "tests": [
+        "cmw:experiment/transition-shift"
+      ],
+      "acceptanceCriterion": [
+        "Action-conditioned forecasts beat the identity baseline and adapt after transition shift."
+      ],
+      "isPartOf": "cmw:work/MW-CORE",
+      "@id": "cmw:issue/MW-011",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-012",
+      "label": "Typed error decomposer",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-011"
+      ],
+      "implements": [
+        "cmw:primitive/error-decomposer"
+      ],
+      "tests": [
+        "cmw:experiment/error-disagreement"
+      ],
+      "acceptanceCriterion": [
+        "Prediction, control, outcome, timing, agency, and learning-progress channels remain separately inspectable."
+      ],
+      "isPartOf": "cmw:work/MW-CORE",
+      "@id": "cmw:issue/MW-012",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-013",
+      "label": "Affordance generator",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-010"
+      ],
+      "implements": [
+        "cmw:primitive/affordance-generator"
+      ],
+      "tests": [
+        "cmw:experiment/affordance-coverage"
+      ],
+      "acceptanceCriterion": [
+        "Candidate reduction preserves the best feasible action while reducing invalid proposals."
+      ],
+      "isPartOf": "cmw:work/MW-CORE",
+      "@id": "cmw:issue/MW-013",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-014",
+      "label": "Action arbitrator",
+      "priority": "P0",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-011",
+        "cmw:issue/MW-012",
+        "cmw:issue/MW-013"
+      ],
+      "implements": [
+        "cmw:primitive/action-arbitrator"
+      ],
+      "tests": [
+        "cmw:experiment/appraisal-contrast"
+      ],
+      "acceptanceCriterion": [
+        "Selection is reproducible and exposes value, risk, information, cost, reversibility, and uncertainty contributions."
+      ],
+      "isPartOf": "cmw:work/MW-CORE",
+      "@id": "cmw:issue/MW-014",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-020",
+      "label": "Dynamic reference generator",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-014"
+      ],
+      "implements": [
+        "cmw:primitive/reference-generator"
+      ],
+      "tests": [
+        "cmw:experiment/dynamic-demand-shift"
+      ],
+      "acceptanceCriterion": [
+        "Dynamic references outperform the static provider during predictable demand shifts without violating safety gates."
+      ],
+      "isPartOf": "cmw:work/MW-REGULATION",
+      "@id": "cmw:issue/MW-020",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-021",
+      "label": "State-relative outcome valuation",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-020"
+      ],
+      "implements": [],
+      "tests": [
+        "cmw:experiment/dynamic-demand-shift"
+      ],
+      "acceptanceCriterion": [
+        "The same outcome changes value with internal state and remains decomposable from prediction error."
+      ],
+      "isPartOf": "cmw:work/MW-REGULATION",
+      "operationalizes": [
+        "cmw:theory/endogenous-regulation"
+      ],
+      "@id": "cmw:issue/MW-021",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-030",
+      "label": "Salience router",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-012",
+        "cmw:issue/MW-020"
+      ],
+      "implements": [
+        "cmw:primitive/salience-router"
+      ],
+      "tests": [
+        "cmw:experiment/distractor-flood"
+      ],
+      "acceptanceCriterion": [
+        "Quiet viability-critical signals survive distractor floods with higher value per compute."
+      ],
+      "isPartOf": "cmw:work/MW-ALLOCATION",
+      "@id": "cmw:issue/MW-030",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-031",
+      "label": "Metacontrol allocator",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-030",
+        "cmw:issue/MW-006"
+      ],
+      "implements": [
+        "cmw:primitive/metacontrol-allocator"
+      ],
+      "tests": [
+        "cmw:experiment/compute-budget",
+        "cmw:experiment/sensor-degradation"
+      ],
+      "acceptanceCriterion": [
+        "Adaptive compute allocation beats at least one fixed budget without increasing irreversible mistakes."
+      ],
+      "isPartOf": "cmw:work/MW-ALLOCATION",
+      "@id": "cmw:issue/MW-031",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-032",
+      "label": "Epistemic controller",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-011",
+        "cmw:issue/MW-031"
+      ],
+      "implements": [
+        "cmw:primitive/epistemic-controller"
+      ],
+      "tests": [
+        "cmw:experiment/learnable-unknown",
+        "cmw:experiment/noisy-tv"
+      ],
+      "acceptanceCriterion": [
+        "Exploration persists for learnable uncertainty and decays for irreducible noise."
+      ],
+      "isPartOf": "cmw:work/MW-ALLOCATION",
+      "@id": "cmw:issue/MW-032",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-040",
+      "label": "Episodic recorder",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-003",
+        "cmw:issue/MW-012"
+      ],
+      "implements": [
+        "cmw:primitive/episodic-recorder"
+      ],
+      "tests": [
+        "cmw:experiment/stale-memory",
+        "cmw:experiment/consolidation-interference"
+      ],
+      "acceptanceCriterion": [
+        "Episodes preserve context, provenance, predictions, outcomes, errors, and eligibility without directly replacing present state."
+      ],
+      "isPartOf": "cmw:work/MW-LEARNING",
+      "@id": "cmw:issue/MW-040",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-041",
+      "label": "Credit assigner",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-040",
+        "cmw:issue/MW-012"
+      ],
+      "implements": [
+        "cmw:primitive/credit-assigner"
+      ],
+      "tests": [
+        "cmw:experiment/delayed-credit"
+      ],
+      "acceptanceCriterion": [
+        "Delayed outcomes update eligible causal contributors more precisely than global reinforcement."
+      ],
+      "isPartOf": "cmw:work/MW-LEARNING",
+      "@id": "cmw:issue/MW-041",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-042",
+      "label": "Consolidator and semantic model",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-040",
+        "cmw:issue/MW-041"
+      ],
+      "implements": [
+        "cmw:primitive/consolidator"
+      ],
+      "tests": [
+        "cmw:experiment/consolidation-interference"
+      ],
+      "acceptanceCriterion": [
+        "Slow integration reduces interference, preserves provenance, and remains reversible after disconfirming evidence."
+      ],
+      "isPartOf": "cmw:work/MW-LEARNING",
+      "@id": "cmw:issue/MW-042",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-043",
+      "label": "Procedural policy and invalidator",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-014",
+        "cmw:issue/MW-041"
+      ],
+      "implements": [
+        "cmw:primitive/procedural-policy",
+        "cmw:primitive/policy-invalidator"
+      ],
+      "tests": [
+        "cmw:experiment/habit-reversal"
+      ],
+      "acceptanceCriterion": [
+        "Compiled behavior saves compute before a shift and is suspended rapidly after its error signature changes."
+      ],
+      "isPartOf": "cmw:work/MW-LEARNING",
+      "@id": "cmw:issue/MW-043",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-044",
+      "label": "Working-memory gate",
+      "priority": "P1",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-030",
+        "cmw:issue/MW-040"
+      ],
+      "implements": [
+        "cmw:primitive/working-memory-gate"
+      ],
+      "tests": [
+        "cmw:experiment/working-memory-interference"
+      ],
+      "acceptanceCriterion": [
+        "Bounded active state preserves critical representations better than FIFO without material viability loss."
+      ],
+      "isPartOf": "cmw:work/MW-LEARNING",
+      "@id": "cmw:issue/MW-044",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-050",
+      "label": "Appraisal vector",
+      "priority": "P2",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-014",
+        "cmw:issue/MW-020"
+      ],
+      "implements": [
+        "cmw:primitive/appraiser"
+      ],
+      "tests": [
+        "cmw:experiment/appraisal-contrast"
+      ],
+      "acceptanceCriterion": [
+        "Certainty, imminence, agency, and controllability produce policy differences beyond valence alone."
+      ],
+      "isPartOf": "cmw:work/MW-APPRAISAL",
+      "@id": "cmw:issue/MW-050",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-051",
+      "label": "Self-estimator",
+      "priority": "P2",
+      "status": "proposed",
+      "dependsOn": [
+        "cmw:issue/MW-012",
+        "cmw:issue/MW-031",
+        "cmw:issue/MW-040"
+      ],
+      "implements": [
+        "cmw:primitive/self-estimator"
+      ],
+      "tests": [
+        "cmw:experiment/sensor-degradation"
+      ],
+      "acceptanceCriterion": [
+        "Confidence tracks accuracy and changes information gathering or action intensity under silent degradation."
+      ],
+      "isPartOf": "cmw:work/MW-APPRAISAL",
+      "@id": "cmw:issue/MW-051",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-060",
+      "label": "Workspace gate experiment",
+      "priority": "Deferred",
+      "status": "deferred",
+      "dependsOn": [
+        "cmw:issue/MW-030",
+        "cmw:issue/MW-044",
+        "cmw:issue/MW-050",
+        "cmw:issue/MW-051"
+      ],
+      "implements": [
+        "cmw:primitive/workspace-gate"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "No work begins until the nonlinguistic core and bounded working memory pass their gates."
+      ],
+      "isPartOf": "cmw:work/MW-DEFERRED",
+      "@id": "cmw:issue/MW-060",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-061",
+      "label": "Plasticity scheduler experiment",
+      "priority": "Deferred",
+      "status": "deferred",
+      "dependsOn": [
+        "cmw:issue/MW-042",
+        "cmw:issue/MW-051"
+      ],
+      "implements": [
+        "cmw:primitive/plasticity-scheduler"
+      ],
+      "tests": [],
+      "acceptanceCriterion": [
+        "No work begins until fixed learning and consolidation rates are measurable and stable."
+      ],
+      "isPartOf": "cmw:work/MW-DEFERRED",
+      "@id": "cmw:issue/MW-061",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "identifier": "MW-062",
+      "label": "Language adapter ablation",
+      "priority": "Deferred",
+      "status": "deferred",
+      "dependsOn": [
+        "cmw:issue/MW-014",
+        "cmw:issue/MW-060"
+      ],
+      "implements": [
+        "cmw:primitive/language-adapter"
+      ],
+      "tests": [
+        "cmw:experiment/language-ablation"
+      ],
+      "acceptanceCriterion": [
+        "Language must add task-grounded decision value rather than merely improving explanation quality."
+      ],
+      "isPartOf": "cmw:work/MW-DEFERRED",
+      "@id": "cmw:issue/MW-062",
+      "@type": "cmw:ImplementationIssue"
+    },
+    {
+      "label": "Cognitive Miniworld Evidence and Primitive Knowledge Graph",
+      "description": "Claim-level graph linking sources, epistemic status, candidate primitives, failure modes, experiments, metrics, and the implementation epic.",
+      "identifier": "0.1.0",
+      "datePublished": "2026",
+      "hasPart": "cmw:project/cognitive-miniworld",
+      "@id": "cmw:graph/cognitive-miniworld-v0.1",
+      "@type": "cmw:KnowledgeGraph"
+    }
+  ]
+}
