@@ -5,41 +5,108 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   gates:
-    name: quality gates
+    name: quality gates (Python 3.14.7t)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: 3.14.7t
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.12.5"
           enable-cache: true
+
+      - name: Install Python
+        run: uv python install "$UV_PYTHON"
 
       # --locked fails if uv.lock is stale: CI runs the committed environment
       # or it does not run at all (MW-001 acceptance).
       - name: Sync locked environment
         run: uv sync --locked --all-groups
 
+      - name: Verify free-threaded runtime
+        run: |
+          uv run --locked python - <<'PY'
+          import sys
+          import sysconfig
+
+          import msgspec
+
+          assert sys.version_info[:3] == (3, 14, 7)
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") == 1
+          assert sys._is_gil_enabled() is False
+          print(sys.version)
+          print(f"msgspec={msgspec.__version__}; GIL disabled")
+          PY
+
       - name: Lint
-        run: uv run ruff check src tests
+        run: uv run --locked ruff check src tests
 
       - name: Type check
-        run: uv run ty check
+        run: uv run --locked ty check
+
+      - name: Build package
+        run: uv build --out-dir /tmp/cmw-dist
 
       - name: Evidence graph
         run: |
-          uv run python knowledge/validate_graph.py \
+          uv run --locked python knowledge/validate_graph.py \
             knowledge/cognitive-miniworld-knowledge-graph.jsonld
 
       # One invocation collects every marker, so the replay gates from
       # MW-003 and the smoke experiments from MW-005 fail this job without
       # a workflow change.
       - name: Tests (unit, property, replay, smoke)
-        run: uv run pytest
+        run: uv run --locked pytest
+
+  gil-compatibility:
+    name: compatibility (Python 3.14.7 with GIL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_PYTHON: 3.14.7+gil
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          cache-suffix: gil
+
+      - name: Install Python
+        run: uv python install "$UV_PYTHON"
+
+      - name: Sync locked environment
+        run: uv sync --locked --all-groups
+
+      - name: Verify conventional runtime
+        run: |
+          uv run --locked python - <<'PY'
+          import sys
+          import sysconfig
+
+          import msgspec
+
+          assert sys.version_info[:3] == (3, 14, 7)
+          assert sysconfig.get_config_var("Py_GIL_DISABLED") != 1
+          assert sys._is_gil_enabled() is True
+          print(sys.version)
+          print(f"msgspec={msgspec.__version__}; GIL enabled")
+          PY
+
+      - name: Compatibility tests
+        run: uv run --locked pytest -m "not freethreaded and not performance"

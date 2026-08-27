@@ -19,8 +19,6 @@ Encodes the invariants the bundle claims, not just parseability:
 Exit 0 on pass (warnings allowed), 2 on any failure.
 Stdlib only.
 """
-from __future__ import annotations
-
 import json
 import re
 import sys

@@ -1,7 +1,5 @@
 """The semantic version travels into every run manifest (EPIC §13 MW-001)."""
 
-from __future__ import annotations
-
 import re
 import tomllib
 from pathlib import Path

@@ -1,11 +1,13 @@
 # cognitive-miniworld — project memory
 
 ViabilityGrid: a deterministic testbed for cognitive primitives.
+Primary runtime: CPython 3.14.7 free-threaded (`3.14.7t` in `uv`).
 Source of truth: `EPIC-001-cognitive-miniworld.md`. The acceptance
 criteria in EPIC §13 are the definition of done for each issue —
 verbatim, never weakened, never reinterpreted. `KICKOFF.md` defines
-the current mission scope. If EPIC, KICKOFF, and this file ever
-conflict, stop and ask Kennedy.
+the current mission scope. GitHub Project GORDIAN tracks delivery:
+`https://github.com/users/kmosoti/projects/8`. If EPIC, KICKOFF, and
+this file ever conflict, stop and ask Kennedy.
 
 ## Session workflow
 
@@ -46,6 +48,10 @@ conflict, stop and ask Kennedy.
    no globals, no mutation, no wall clock — tick counter only.
 7. Memory (later milestones) contributes evidence to estimation;
    it never overwrites current observations.
+8. Concurrency is across isolated `(scenario, seed, variant)` runs
+   only. A tick and episode are single-threaded. Workers share no
+   mutable world, primitive, RNG, iterator, or event log; results are
+   restored to stable input order before aggregation.
 
 ## Determinism pitfalls
 
@@ -54,8 +60,13 @@ conflict, stop and ask Kennedy.
 - Canonical serialization: msgspec struct field order is stable;
   digests = sha256 over canonical encoded bytes.
 - Floats: plain arithmetic only; no platform-dependent math paths.
-- Dict insertion order is stable in 3.12 — still sort keys at
+- Dict insertion order is stable in 3.14 — still sort keys at
   serialization boundaries.
+- Free-threaded built-ins have internal synchronization, but that is
+  not an application-level concurrency contract. Never rely on it;
+  isolate state or use an explicit lock outside behavioral code.
+- Worker count, scheduling, and wall time are diagnostics. They are
+  recorded but excluded from behavioral event and terminal digests.
 
 ## Approved dependencies
 
@@ -68,14 +79,14 @@ Rust.
 ## Commands
 
 ```bash
-uv sync
-uv run ruff check src tests
-uv run ty check
-uv run pytest                      # unit + property + contract
-uv run python knowledge/validate_graph.py \
+uv sync --locked --all-groups
+uv run --locked ruff check src tests
+uv run --locked ty check
+uv run --locked pytest             # all tiers + runtime qualification
+uv run --locked python knowledge/validate_graph.py \
     knowledge/cognitive-miniworld-knowledge-graph.jsonld
 # once MW-003 lands:
-uv run python -m cmw.replay <run_dir>   # must reproduce digests
+uv run --locked python -m cmw.replay <run_dir>   # must reproduce digests
 ```
 
 All of these must be green before any commit. The graph validator
@@ -84,5 +95,6 @@ exits 2 on failure; treat its warnings as review items, not noise.
 ## Decision records
 
 ADRs live in `docs/adr/`. ADR-001..009 are enumerated in EPIC §16;
-ADR-010..014 are specified in `KICKOFF.md` and are pre-approved as
-written. Any contract change after MW-002 requires a new ADR.
+ADR-010..014 are specified in `KICKOFF.md`. ADR-015 supersedes ADR-001
+with the Python 3.14.7 free-threaded baseline and concurrency boundary.
+Any contract change after MW-002 requires a new ADR.

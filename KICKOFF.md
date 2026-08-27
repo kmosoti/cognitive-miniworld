@@ -7,7 +7,7 @@ Milestone 1 without explicit confirmation from Kennedy.
 
 `CLAUDE.md` governs how you work. EPIC §13 acceptance criteria are
 the definition of done per issue. This file adds mission scope and
-resolves five decisions the EPIC leaves open.
+records six decisions that complete or amend the EPIC.
 
 ## Before MW-001
 
@@ -62,6 +62,22 @@ deviation cost term is `((x - target) / tolerance)^2`. The
 midpoints with fixed tolerance. This gives MW-020/021 a slot to
 compete for later without changing the contract.
 
+**ADR-015 — Python 3.14.7 free-threaded boundary.** The required
+primary runtime is CPython 3.14.7 free-threaded, with conventional
+3.14.7 retained as a compatibility lane. Concurrency is allowed only
+across isolated scenario/seed/variant runs. Ticks and episodes stay
+single-threaded, worker scheduling is excluded from behavioral digests,
+and native imports must not re-enable the GIL. This supersedes ADR-001's
+Python 3.12 baseline without changing the Python-first decision.
+
+## MW-001 environment uplift
+
+Before MW-002, amend MW-001 to target `3.14.7t`, raise dependency
+floors to the current locked releases, qualify native dependencies with
+the GIL disabled, retain a conventional 3.14.7 CI lane, and gate an
+adaptive 1→2→4 free-threaded scaling curve. Preserve the original
+verdict as history and append the uplift evidence.
+
 ## Issue sequence
 
 MW-001 → MW-002 → MW-003 → MW-004 → MW-005 → MW-006 → MW-007.
@@ -73,21 +89,24 @@ verdict note, commit. One issue per session; ask before batching.
 Notes per issue:
 
 - **MW-001**: wire the graph validator into CI alongside lint,
-  types, and tests. Create ADR-001..014 (contents for 001..009 per
-  EPIC §16, 010..014 per this file).
+  types, and tests. Create ADR-001..015 (contents for 001..009 per
+  EPIC §16 and 010..015 per this file).
 - **MW-002**: contracts for observation, belief, reference,
   proposal, prediction, error, trace, budget, self-estimate.
   Include the ADR-014 trajectory shape and ADR-012 unit-cost
   fields now so later milestones don't force schema breaks.
 - **MW-003**: replay is the load-bearing deliverable of this
   milestone. Reordering unrelated streams must not perturb another
-  stream's sequence — property-test it.
+  stream's sequence — property-test it, including reordered concurrent
+  scheduling of isolated streams.
 - **MW-004**: implement ADR-011 viability dynamics in the kernel.
   Property tests: conservation, bounds, terminal-state behavior.
 - **MW-005**: the seven fixtures from EPIC §13; the demand-shift
   fixture is the priority — it feeds the first real experiment.
 - **MW-006**: metrics compute from the event log alone, including
   `time-outside-viability` and `viability-auc` as defined above.
+  Record interpreter, ABI, GIL state, executor, and worker count as
+  diagnostics outside behavioral digests.
 - **MW-007**: baselines per EPIC; oracle reachable only from
   evaluation code (invariant 4).
 
@@ -100,6 +119,10 @@ write `docs/verdicts/M0.md`: what exists, the replay demo command,
 baseline and oracle numbers with seeds, and any deviations from
 the EPIC — whether or not everything went well. A milestone
 closes with a verdict, not with success.
+
+Serial and threaded batches over the same run specifications must also
+produce identical per-run event and terminal hashes before a threaded
+worker count can become the default.
 
 ## Stop and report
 
