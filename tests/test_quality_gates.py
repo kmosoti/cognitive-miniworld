@@ -1,9 +1,4 @@
-"""MW-001 acceptance: a failing property fails the run.
-
-Milestone 0 has no replay to break yet; `uv run --locked pytest`
-collects every marker, so the replay gates added by MW-003 fail the same
-way without a CI change.
-"""
+"""MW-001 acceptance: failing properties and replay gates fail the run."""
 
 import subprocess
 import sys
