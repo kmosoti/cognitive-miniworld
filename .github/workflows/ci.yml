@@ -88,7 +88,8 @@ jobs:
           cache-suffix: gil
 
       - name: Install Python
-        run: uv python install "$UV_PYTHON"
+        # `+gil` selects an installed interpreter; managed download keys omit it.
+        run: uv python install 3.14.7
 
       - name: Sync locked environment
         run: uv sync --locked --all-groups
