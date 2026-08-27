@@ -1,8 +1,8 @@
 # MW-EPIC-001: Cognitive Miniworld Primitive Testbed
 
-**Status:** Proposed  
-**Knowledge graph:** `cognitive-miniworld-knowledge-graph.jsonld`  
-**Primary implementation language:** Python 3.12+  
+**Status:** Proposed
+**Knowledge graph:** `cognitive-miniworld-knowledge-graph.jsonld`
+**Primary implementation language:** CPython 3.14.7 free-threaded
 **Design stance:** deterministic kernel, explicit stochastic boundaries, typed black-box primitives, ablation before composition
 
 ## 1. Objective
@@ -56,6 +56,7 @@ The broader graph adds bounded evidence for internal models, action competition,
 6. **Provenance:** beliefs, memories, decisions, and updates retain source event identifiers.
 7. **Metric preregistration:** each scenario declares one primary metric, safety metrics, a minimum meaningful effect, and a kill condition before benchmark runs.
 8. **Present evidence wins:** memory contributes evidence to state estimation; it cannot directly overwrite current observations.
+9. **Concurrency isolation:** concurrency is permitted only across isolated scenario/seed/variant runs. A tick and episode remain single-threaded, share no mutable behavioral state, and produce the same per-run digests regardless of worker count or scheduling.
 
 ## 6. Proposed system topology
 
@@ -188,6 +189,7 @@ cognitive-miniworld/
 
 ### Recommended dependencies
 
+- CPython 3.14.7 free-threaded (`3.14.7t` in `uv`)
 - `uv`, `ruff`, `ty`, `pytest`, and `hypothesis`
 - `msgspec` for immutable typed messages and serialization
 - `numpy` only where probability distributions require it
@@ -324,11 +326,15 @@ The benchmark seed count is a starting engineering policy, not a scientific univ
 - `uv` project, pinned dependency lock, `ruff`, `ty`, `pytest`, and Hypothesis.
 - CI commands for unit, property, replay, and experiment smoke tests.
 - Semantic version recorded in every run manifest.
+- Free-threaded 3.14.7 primary CI with conventional 3.14.7 compatibility.
+- Native dependency stress and adaptive 1→2→4 scaling qualification.
 
 **Acceptance**
 
 - Clean environment can run the test suite from the lock file.
 - A failing property or replay mismatch fails CI.
+- The primary runtime reports a free-threaded build and keeps the GIL disabled after native imports.
+- Threaded qualification produces identical outputs and improves median time by at least 5% at each available 1→2→4 worker step.
 
 #### MW-002 — Canonical data contracts
 
@@ -355,6 +361,7 @@ The benchmark seed count is a starting engineering policy, not a scientific univ
 
 - A completed run replays to the same event and terminal-state hashes.
 - Reordering unrelated RNG streams does not alter another stream's sequence.
+- Concurrent scheduling of isolated named streams does not alter their sequences.
 
 #### MW-004 — World kernel
 
@@ -388,6 +395,7 @@ The benchmark seed count is a starting engineering policy, not a scientific univ
 - Append-only JSONL event log.
 - Metric functions that consume events rather than primitive internals.
 - Run summary with configuration hashes and paired-seed comparison identifiers.
+- Diagnostic interpreter, ABI, GIL-state, executor, and worker-count metadata outside behavioral digests.
 
 **Acceptance**
 
@@ -631,6 +639,15 @@ Add after the nonlinguistic core passes all required gates. Compare core versus 
 - Translating the grid preserves policy outcomes.
 - Splitting one distractor stream into equivalent streams does not alter viability decisions.
 - Duplicating a memory does not double evidential weight unless the model represents independent evidence.
+- Running the same ordered batch with one or multiple workers preserves every per-run semantic event digest and terminal hash.
+
+### Free-threaded stress and performance tests
+
+- Importing every native dependency leaves the GIL disabled in the primary runtime.
+- Concurrent immutable-contract round trips are lossless and byte-stable.
+- Independent deterministic CPU probes produce identical outputs at every worker count.
+- On runners with at least two effective CPUs, median time improves by at least 5% from one to two workers; test two to four workers when four CPUs are available.
+- Wall time is qualification evidence only and never enters a behavioral digest.
 
 ### Mutation tests
 
@@ -655,7 +672,8 @@ Emit one event per primitive invocation:
 - source event IDs,
 - typed errors,
 - learning updates,
-- hidden evaluator labels in a separate channel.
+- hidden evaluator labels in a separate channel,
+- interpreter version, ABI/cache tag, free-threaded build flag, live GIL state, executor, and worker count as diagnostic metadata.
 
 The system should answer after any failure:
 
@@ -672,6 +690,7 @@ The system should answer after any failure:
 - **ADR-007:** Typed error vector instead of one global scalar.
 - **ADR-008:** Baseline, ablation, oracle, and kill test required for promotion.
 - **ADR-009:** Biological evidence and engineering analogy stored as different relation types.
+- **ADR-015:** Python 3.14.7 free-threaded runtime and concurrency boundary; supersedes ADR-001's interpreter baseline.
 
 ## 17. Definition of done
 
@@ -683,5 +702,6 @@ The epic is complete when:
 - memory can revise a stale prior and consolidate without unacceptable interference;
 - each primitive can be ablated without changing unrelated module behavior;
 - every benchmark result is reproducible from the committed manifest and event log;
+- per-run behavioral digests are invariant to serial versus threaded batch scheduling;
 - every implemented primitive maps through the JSON-LD graph to bounded claims, source scope, experiments, metrics, and failure modes;
 - no conclusion depends on subjective assessment that the agent “looks intelligent.”

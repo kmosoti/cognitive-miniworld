@@ -4,8 +4,6 @@ It must pass on the committed graph and it must be able to fail: a gate
 that cannot go red is not a gate.
 """
 
-from __future__ import annotations
-
 import importlib.util
 import json
 import subprocess

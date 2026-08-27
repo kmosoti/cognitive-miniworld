@@ -18,14 +18,15 @@ Supporting files:
 ## Validation
 
 ```bash
-uv add rdflib
-uv run python validate_graph.py cognitive-miniworld-knowledge-graph.jsonld
+uv sync --locked --all-groups
+uv run --locked python knowledge/validate_graph.py \
+    knowledge/cognitive-miniworld-knowledge-graph.jsonld
 ```
 
 Expected result for this generated version:
 
 ```text
-valid: 226 nodes, 1864 RDF triples, no dangling internal references
+summary: 0 failure(s), 1 warning(s), 226 nodes, 124 complete paths, ~1864 triples
 ```
 
 ## Graph semantics

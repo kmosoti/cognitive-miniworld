@@ -10,6 +10,11 @@ to handle, or it does not ship.
 Source of truth: [`EPIC-001-cognitive-miniworld.md`](EPIC-001-cognitive-miniworld.md).
 Current mission scope: [`KICKOFF.md`](KICKOFF.md) (Milestone 0).
 Working agreement: [`CLAUDE.md`](CLAUDE.md).
+Delivery roadmap: [GORDIAN](https://github.com/users/kmosoti/projects/8).
+
+The required development runtime is CPython 3.14.7 free-threaded. `uv`
+reads `3.14.7t` from `.python-version` and installs the managed build
+when necessary.
 
 ## Layout
 
@@ -18,7 +23,7 @@ CLAUDE.md, KICKOFF.md, EPIC-001-*.md   governing documents
 knowledge/                             JSON-LD evidence graph, queries, validator
 src/cmw/                               the harness (grows one MW-### issue at a time)
 tests/                                 unit, property, replay, and smoke gates
-docs/adr/                              decision records (ADR-001..014)
+docs/adr/                              decision records (ADR-001..015)
 docs/verdicts/                         per-issue and per-milestone verdicts
 ```
 
@@ -27,30 +32,34 @@ docs/verdicts/                         per-issue and per-milestone verdicts
 Every gate must be green before a commit.
 
 ```bash
-uv sync --all-groups                                    # locked environment
-uv run ruff check src tests                             # lint
-uv run ty check                                         # types
-uv run pytest                                           # unit + property + replay + smoke
-uv run python knowledge/validate_graph.py \
+uv sync --locked --all-groups                           # locked environment
+uv run --locked ruff check src tests                    # lint
+uv run --locked ty check                                # types
+uv run --locked pytest                                  # all tiers + runtime gates
+uv run --locked python knowledge/validate_graph.py \
     knowledge/cognitive-miniworld-knowledge-graph.jsonld # evidence graph (exit 2 = fail)
 ```
 
-`uv run pytest` runs every marker. To select one tier:
+`uv run --locked pytest` runs every marker, including the free-threaded
+correctness and relative performance gates. To select one tier:
 
 ```bash
-uv run pytest -m property   # Hypothesis properties (EPIC §14)
-uv run pytest -m replay     # deterministic replay gates (MW-003 onward)
-uv run pytest -m smoke      # experiment smoke runs (MW-005 onward)
+uv run --locked pytest -m property      # Hypothesis properties (EPIC §14)
+uv run --locked pytest -m replay        # replay gates (MW-003 onward)
+uv run --locked pytest -m smoke         # smoke runs (MW-005 onward)
+uv run --locked pytest -m freethreaded  # GIL-off correctness and stress
+uv run --locked pytest -m performance   # adaptive 1→2→4 scaling curve
 ```
 
 Once MW-003 lands, replay a recorded run and compare digests:
 
 ```bash
-uv run python -m cmw.replay <run_dir>
+uv run --locked python -m cmw.replay <run_dir>
 ```
 
 ## Status
 
-Milestone 0, issue MW-001 complete. Progress is recorded per issue in
-`docs/verdicts/MW-###.md` — a milestone closes with a verdict, not with
-success.
+Milestone 0, issue MW-001 includes the Python 3.14.7 free-threaded
+baseline; MW-002 is next. Progress is tracked in GORDIAN and recorded per
+issue in `docs/verdicts/MW-###.md` — a milestone closes with a verdict,
+not with success.

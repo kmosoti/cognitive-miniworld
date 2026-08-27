@@ -3,13 +3,16 @@ name = "cognitive-miniworld"
 version = "0.1.0"
 description = "ViabilityGrid: a deterministic testbed for cognitive primitives"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14.7,<3.15"
 dependencies = [
-    "msgspec>=0.19.0",
+    "msgspec>=0.21.1",
 ]
 
 [project.urls]
-Epic = "https://github.com/kennedy/cognitive-miniworld/blob/main/EPIC-001-cognitive-miniworld.md"
+Repository = "https://github.com/kmosoti/cognitive-miniworld"
+Issues = "https://github.com/kmosoti/cognitive-miniworld/issues"
+GORDIAN = "https://github.com/users/kmosoti/projects/8"
+Epic = "https://github.com/kmosoti/cognitive-miniworld/blob/main/EPIC-001-cognitive-miniworld.md"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
@@ -18,17 +21,20 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "cmw"
 
+[tool.uv]
+required-version = "==0.12.5"
+
 [dependency-groups]
 dev = [
-    "pytest>=8.3.0",
-    "hypothesis>=6.112.0",
-    "ruff>=0.14.0",
+    "pytest>=9.1.1",
+    "hypothesis>=6.165.10",
+    "ruff>=0.16.4",
     "ty>=0.0.75",
 ]
 
 # ---------------------------------------------------------------- lint ----
 [tool.ruff]
-target-version = "py312"
+target-version = "py314"
 line-length = 88
 src = ["src", "tests"]
 
@@ -42,7 +48,7 @@ select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "TID", "N"]
 
 # --------------------------------------------------------------- types ----
 [tool.ty.environment]
-python-version = "3.12"
+python-version = "3.14"
 
 # --------------------------------------------------------------- tests ----
 [tool.pytest.ini_options]
@@ -52,4 +58,6 @@ markers = [
     "property: Hypothesis property test (EPIC §14).",
     "replay: deterministic replay gate (lands with MW-003).",
     "smoke: fast experiment smoke run (lands with MW-005).",
+    "freethreaded: requires the CPython free-threaded build with the GIL disabled.",
+    "performance: relative concurrency performance gate; wall time is never digested.",
 ]
