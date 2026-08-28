@@ -680,6 +680,18 @@ def _prepare_inputs(
             raise ValueError(
                 "reference must contain one point per prediction-horizon variable"
             )
+        _validate_evaluated_feature_names(
+            belief.hypotheses,
+            points,
+            "belief hypotheses",
+        )
+        for prediction in predictions:
+            if prediction.horizon_tick == horizon:
+                _validate_evaluated_feature_names(
+                    prediction.outcomes,
+                    points,
+                    "prediction outcomes",
+                )
         reference_by_horizon[horizon] = points
 
     return _PreparedInputs(
@@ -699,7 +711,7 @@ def _validate_belief(belief: BeliefState) -> None:
     belief.uncertainty.__post_init__()
     for hypothesis in belief.hypotheses:
         hypothesis.__post_init__()
-        _validate_features(hypothesis.features, "belief hypothesis")
+        _validate_feature_values(hypothesis.features)
 
 
 def _validate_reference(reference: ReferenceTrajectory) -> None:
@@ -723,12 +735,9 @@ def _validate_prediction(prediction: PredictionDistribution) -> None:
     prediction.__post_init__()
     prediction.provenance.__post_init__()
     prediction.uncertainty.__post_init__()
-    outcome_ids = tuple(outcome.outcome_id for outcome in prediction.outcomes)
-    if len(outcome_ids) != len(set(outcome_ids)):
-        raise ValueError("prediction outcomes must have unique IDs")
     for outcome in prediction.outcomes:
         outcome.__post_init__()
-        _validate_features(outcome.features, "prediction outcome")
+        _validate_feature_values(outcome.features)
 
 
 def _validate_error(error: ErrorBundle) -> None:
@@ -743,12 +752,25 @@ def _validate_budget(budget: ResourceBudget) -> None:
     budget.uncertainty.__post_init__()
 
 
-def _validate_features(features: tuple[FeatureValue, ...], field: str) -> None:
+def _validate_feature_values(features: tuple[FeatureValue, ...]) -> None:
     for feature in features:
         feature.__post_init__()
-    names = tuple(feature.name for feature in features)
-    if len(names) != len(set(names)):
-        raise ValueError(f"{field} must have unique feature names")
+
+
+def _validate_evaluated_feature_names(
+    items: tuple[StateHypothesis, ...] | tuple[PredictedOutcome, ...],
+    points: tuple[ReferencePoint, ...],
+    field: str,
+) -> None:
+    evaluated_names = {point.variable for point in points}
+    for item in items:
+        if item.probability == 0.0:
+            continue
+        names = tuple(
+            feature.name for feature in item.features if feature.name in evaluated_names
+        )
+        if len(names) != len(set(names)):
+            raise ValueError(f"{field} must have unique evaluated feature names")
 
 
 def _numeric(value: object, field: str) -> float:

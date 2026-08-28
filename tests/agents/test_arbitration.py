@@ -50,13 +50,17 @@ def _uncertainty(confidence: float = 1.0) -> Uncertainty:
     )
 
 
-def _feature(value: bool | float) -> FeatureValue:
+def _named_feature(name: str, value: bool | float) -> FeatureValue:
     return FeatureValue(
         schema_version=CURRENT_SCHEMA_VERSION,
-        name="integrity_safe",
+        name=name,
         value=value,
         unit=None,
     )
+
+
+def _feature(value: bool | float) -> FeatureValue:
+    return _named_feature("integrity_safe", value)
 
 
 def _belief(value: bool = True) -> BeliefState:
@@ -362,6 +366,67 @@ def test_arbitration_accepts_duplicate_names_in_unused_proposal_parameters() -> 
     )
 
     assert result.decision.action == "wait"
+
+
+def test_arbitration_accepts_duplicate_prediction_outcome_ids() -> None:
+    proposal = _proposal("wait", reversible=True)
+    prediction = _prediction(
+        proposal,
+        (("shared", 0.5, True), ("other", 0.5, False)),
+    )
+    duplicate = msgspec.structs.replace(
+        prediction.outcomes[1],
+        outcome_id=prediction.outcomes[0].outcome_id,
+    )
+    prediction = msgspec.structs.replace(
+        prediction,
+        outcomes=(prediction.outcomes[0], duplicate),
+    )
+
+    result = _arbitrate((proposal,), (prediction,))
+
+    assert result.decision.action == "wait"
+
+
+def test_arbitration_accepts_duplicate_unevaluated_feature_names() -> None:
+    proposal = _proposal("wait", reversible=True)
+    unused = (_named_feature("unused", True), _named_feature("unused", False))
+    belief = _belief()
+    hypothesis = msgspec.structs.replace(
+        belief.hypotheses[0],
+        features=(*belief.hypotheses[0].features, *unused),
+    )
+    belief = msgspec.structs.replace(belief, hypotheses=(hypothesis,))
+    prediction = _prediction(proposal, (("safe", 1.0, True),))
+    outcome = msgspec.structs.replace(
+        prediction.outcomes[0],
+        features=(*prediction.outcomes[0].features, *unused),
+    )
+    prediction = msgspec.structs.replace(prediction, outcomes=(outcome,))
+
+    result = ActionArbitrator().arbitrate(
+        belief,
+        _reference(),
+        (proposal,),
+        (prediction,),
+        _error(),
+        _budget(),
+    )
+
+    assert result.decision.action == "wait"
+
+
+def test_arbitration_rejects_duplicate_evaluated_feature_names() -> None:
+    proposal = _proposal("wait", reversible=True)
+    prediction = _prediction(proposal, (("safe", 1.0, True),))
+    outcome = msgspec.structs.replace(
+        prediction.outcomes[0],
+        features=(_feature(True), _feature(False)),
+    )
+    prediction = msgspec.structs.replace(prediction, outcomes=(outcome,))
+
+    with pytest.raises(ValueError, match="unique evaluated feature names"):
+        _arbitrate((proposal,), (prediction,))
 
 
 def test_resource_fraction_handles_unbounded_contract_integers() -> None:
