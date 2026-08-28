@@ -484,6 +484,37 @@ def test_independent_result_binds_decision_unit_cost_to_work() -> None:
         _with_decision(result, decision)
 
 
+def test_independent_result_bounds_decision_rationale_before_revalidation() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    decision = msgspec.structs.replace(
+        result.decision,
+        rationale=result.decision.rationale * 10_000,
+    )
+
+    with pytest.raises(ValueError, match="exactly 5 components"):
+        _with_decision(result, decision)
+
+
+def test_independent_result_bounds_decision_provenance_before_revalidation() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    provenance = msgspec.structs.replace(
+        result.decision.provenance,
+        source_event_ids=tuple(f"event:{index:05d}" for index in range(10_001)),
+    )
+    decision = msgspec.structs.replace(result.decision, provenance=provenance)
+
+    with pytest.raises(ValueError, match="decision provenance exceeds"):
+        _with_decision(result, decision)
+
+
 def test_zero_probability_outcomes_do_not_change_information_value() -> None:
     compact = _proposal("compact", reversible=True)
     padded = _proposal("padded", reversible=True)
@@ -509,6 +540,48 @@ def test_zero_probability_outcomes_do_not_change_information_value() -> None:
     by_action = {value.action: value for value in result.values}
     assert by_action["compact"].information_value == pytest.approx(1.0)
     assert by_action["padded"].information_value == pytest.approx(1.0)
+
+
+def test_zero_probability_items_need_no_reference_features() -> None:
+    proposal = _proposal("wait", reversible=True)
+    prediction = _prediction(proposal, (("safe", 1.0, True),))
+    baseline = _arbitrate((proposal,), (prediction,))
+    belief = _belief()
+    padded_belief = msgspec.structs.replace(
+        belief,
+        hypotheses=(
+            *belief.hypotheses,
+            StateHypothesis(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                state_id="impossible",
+                probability=0.0,
+                features=(),
+            ),
+        ),
+    )
+    padded_prediction = msgspec.structs.replace(
+        prediction,
+        outcomes=(
+            *prediction.outcomes,
+            PredictedOutcome(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                outcome_id="impossible",
+                probability=0.0,
+                features=(),
+            ),
+        ),
+    )
+
+    padded = ActionArbitrator().arbitrate(
+        padded_belief,
+        _reference(),
+        (proposal,),
+        (padded_prediction,),
+        _error(),
+        _budget(),
+    )
+
+    assert padded.selected_value == baseline.selected_value
 
 
 @pytest.mark.parametrize(

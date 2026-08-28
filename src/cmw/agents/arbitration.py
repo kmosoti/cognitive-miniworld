@@ -34,6 +34,7 @@ _MAX_REFERENCE_POINTS: Final = 64
 _MAX_PARAMETERS: Final = 64
 _MAX_PRECONDITIONS: Final = 16
 _MAX_SOURCE_EVENT_IDS: Final = 10_000
+_RATIONALE_COMPONENT_COUNT: Final = 5
 _MAX_WORK: Final = 1_000_000
 _MAX_WEIGHT: Final = 100.0
 _MAX_NORMALIZED_DEVIATION: Final = 1_000_000.0
@@ -194,6 +195,20 @@ class ArbitrationResult:
             )
         if type(self.decision) is not ActionDecision:
             raise TypeError("decision must be an ActionDecision")
+        if type(self.decision.rationale) is not tuple:
+            raise TypeError("decision rationale must be a tuple")
+        if len(self.decision.rationale) != _RATIONALE_COMPONENT_COUNT:
+            raise ValueError(
+                "decision rationale must contain exactly "
+                f"{_RATIONALE_COMPONENT_COUNT} components"
+            )
+        if type(self.decision.provenance) is not Provenance:
+            raise TypeError("decision provenance must be Provenance")
+        decision_source_ids = self.decision.provenance.source_event_ids
+        if type(decision_source_ids) is not tuple:
+            raise TypeError("decision provenance source_event_ids must be a tuple")
+        if len(decision_source_ids) > _MAX_SOURCE_EVENT_IDS:
+            raise ValueError("decision provenance exceeds the arbitration limit")
         self.decision.__post_init__()
         self.decision.provenance.__post_init__()
         self.decision.uncertainty.__post_init__()
@@ -780,6 +795,8 @@ def _distribution_deviation_cost(
 ) -> float:
     item_costs = []
     for item in items:
+        if item.probability == 0.0:
+            continue
         features = _item_features(item, points)
         deviation_cost = math.fsum(
             _normalized_deviation(features[point.variable], point) ** 2
@@ -795,6 +812,8 @@ def _reference_violation_probability(
 ) -> float:
     probabilities = []
     for outcome in outcomes:
+        if outcome.probability == 0.0:
+            continue
         features = _item_features(outcome, points)
         violates = any(
             _normalized_deviation(features[point.variable], point) > 1.0
