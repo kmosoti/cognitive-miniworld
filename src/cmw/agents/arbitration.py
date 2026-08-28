@@ -154,8 +154,12 @@ class ArbitrationResult:
     """Selected decision plus the complete, proposal-sorted score table."""
 
     weights: ArbitrationWeights
+    source_belief_id: str
+    source_reference_id: str
+    source_horizon_tick: int
     source_confidence: float
     source_event_ids: tuple[str, ...]
+    expected_work: int
     decision: ActionDecision
     values: tuple[ActionValue, ...]
 
@@ -163,6 +167,10 @@ class ArbitrationResult:
         if type(self.weights) is not ArbitrationWeights:
             raise TypeError("weights must be ArbitrationWeights")
         self.weights.__post_init__()
+        _text(self.source_belief_id, "source_belief_id")
+        _text(self.source_reference_id, "source_reference_id")
+        if type(self.source_horizon_tick) is not int or self.source_horizon_tick < 0:
+            raise ValueError("source_horizon_tick must be an integer >= 0")
         source_confidence = _finite(self.source_confidence, "source_confidence")
         if not 0.0 <= source_confidence <= 1.0:
             raise ValueError("source_confidence must be within [0.0, 1.0]")
@@ -177,6 +185,13 @@ class ArbitrationResult:
             raise ValueError("source_event_ids must contain non-empty strings")
         if self.source_event_ids != tuple(sorted(set(self.source_event_ids))):
             raise ValueError("source_event_ids must be sorted and unique")
+        if (
+            type(self.expected_work) is not int
+            or not 0 <= self.expected_work <= _MAX_WORK
+        ):
+            raise ValueError(
+                f"expected_work must be an integer within [0, {_MAX_WORK}]"
+            )
         if type(self.decision) is not ActionDecision:
             raise TypeError("decision must be an ActionDecision")
         self.decision.__post_init__()
@@ -224,6 +239,14 @@ class ArbitrationResult:
         )
         if selected_value != min(selectable, key=_selection_key):
             raise ValueError("decision must select the canonical winning value")
+        expected_decision_id = (
+            f"{_PRODUCER}:{self.source_belief_id}:{self.source_reference_id}:"
+            f"{selected_value.proposal_id}:{self.source_horizon_tick}"
+        )
+        if self.decision.decision_id != expected_decision_id:
+            raise ValueError("decision ID must match the arbitration inputs")
+        if self.decision.unit_cost != self.expected_work:
+            raise ValueError("decision unit_cost must match the arbitration work")
         if self.decision.uncertainty.confidence != _decision_confidence(
             selectable,
             selected_value,
@@ -449,8 +472,12 @@ class ActionArbitrator:
         )
         return ArbitrationResult(
             weights=self.weights,
+            source_belief_id=belief.belief_id,
+            source_reference_id=reference.trajectory_id,
+            source_horizon_tick=selected_prediction.horizon_tick,
             source_confidence=source_confidence,
             source_event_ids=prepared.source_event_ids,
+            expected_work=prepared.work,
             decision=decision,
             values=values,
         )
@@ -668,7 +695,8 @@ def _validate_proposal(proposal: ActionProposal) -> None:
     proposal.estimated_cost.__post_init__()
     proposal.provenance.__post_init__()
     proposal.uncertainty.__post_init__()
-    _validate_features(proposal.parameters, "proposal parameters")
+    for parameter in proposal.parameters:
+        parameter.__post_init__()
 
 
 def _validate_prediction(prediction: PredictionDistribution) -> None:

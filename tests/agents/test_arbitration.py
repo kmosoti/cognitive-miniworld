@@ -14,6 +14,7 @@ from cmw.agents.arbitration import (
 )
 from cmw.contracts import (
     CURRENT_SCHEMA_VERSION,
+    ActionDecision,
     ActionProposal,
     BeliefState,
     ErrorBundle,
@@ -203,6 +204,23 @@ def _arbitrate(
     )
 
 
+def _with_decision(
+    result: ArbitrationResult,
+    decision: ActionDecision,
+) -> ArbitrationResult:
+    return ArbitrationResult(
+        weights=result.weights,
+        source_belief_id=result.source_belief_id,
+        source_reference_id=result.source_reference_id,
+        source_horizon_tick=result.source_horizon_tick,
+        source_confidence=result.source_confidence,
+        source_event_ids=result.source_event_ids,
+        expected_work=result.expected_work,
+        decision=decision,
+        values=result.values,
+    )
+
+
 def test_value_is_progress_minus_risk_minus_cost_plus_information() -> None:
     improve = _proposal("improve", reversible=True)
     uncertain = _proposal("uncertain", reversible=True)
@@ -332,6 +350,20 @@ def test_arbitration_accepts_contract_valid_precondition_order() -> None:
     assert result.decision.action == "wait"
 
 
+def test_arbitration_accepts_duplicate_names_in_unused_proposal_parameters() -> None:
+    proposal = msgspec.structs.replace(
+        _proposal("wait", reversible=True),
+        parameters=(_feature(0.25), _feature(0.75)),
+    )
+
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+
+    assert result.decision.action == "wait"
+
+
 def test_resource_fraction_handles_unbounded_contract_integers() -> None:
     huge = 10**1000
     proposal = _proposal("huge", reversible=True, compute_units=huge)
@@ -391,13 +423,7 @@ def test_independent_result_recomputes_choice_entropy() -> None:
     decision = msgspec.structs.replace(result.decision, uncertainty=uncertainty)
 
     with pytest.raises(ValueError, match="choice entropy"):
-        ArbitrationResult(
-            weights=result.weights,
-            source_confidence=result.source_confidence,
-            source_event_ids=result.source_event_ids,
-            decision=decision,
-            values=result.values,
-        )
+        _with_decision(result, decision)
 
 
 def test_independent_result_recomputes_decision_confidence() -> None:
@@ -412,13 +438,7 @@ def test_independent_result_recomputes_decision_confidence() -> None:
     decision = msgspec.structs.replace(result.decision, uncertainty=uncertainty)
 
     with pytest.raises(ValueError, match="decision confidence"):
-        ArbitrationResult(
-            weights=result.weights,
-            source_confidence=result.source_confidence,
-            source_event_ids=result.source_event_ids,
-            decision=decision,
-            values=result.values,
-        )
+        _with_decision(result, decision)
 
 
 def test_independent_result_binds_decision_provenance() -> None:
@@ -434,13 +454,34 @@ def test_independent_result_binds_decision_provenance() -> None:
     decision = msgspec.structs.replace(result.decision, provenance=provenance)
 
     with pytest.raises(ValueError, match="decision provenance"):
-        ArbitrationResult(
-            weights=result.weights,
-            source_confidence=result.source_confidence,
-            source_event_ids=result.source_event_ids,
-            decision=decision,
-            values=result.values,
-        )
+        _with_decision(result, decision)
+
+
+def test_independent_result_binds_decision_id_to_inputs() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    decision = msgspec.structs.replace(
+        result.decision,
+        decision_id="cmw.agents.action-arbitrator:forged",
+    )
+
+    with pytest.raises(ValueError, match="decision ID"):
+        _with_decision(result, decision)
+
+
+def test_independent_result_binds_decision_unit_cost_to_work() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    decision = msgspec.structs.replace(result.decision, unit_cost=0)
+
+    with pytest.raises(ValueError, match="decision unit_cost"):
+        _with_decision(result, decision)
 
 
 def test_zero_probability_outcomes_do_not_change_information_value() -> None:
@@ -531,13 +572,7 @@ def test_independent_result_must_select_the_canonical_winner() -> None:
     worse_only = _arbitrate((worse,), (worse_prediction,))
 
     with pytest.raises(ValueError, match="canonical winning value"):
-        ArbitrationResult(
-            weights=result.weights,
-            source_confidence=result.source_confidence,
-            source_event_ids=result.source_event_ids,
-            decision=worse_only.decision,
-            values=result.values,
-        )
+        _with_decision(result, worse_only.decision)
 
 
 def test_independent_result_must_recompute_dominance_before_selection() -> None:
