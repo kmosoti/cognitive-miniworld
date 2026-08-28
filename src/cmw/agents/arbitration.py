@@ -172,6 +172,11 @@ class ArbitrationResult:
             set(identifiers)
         ):
             raise ValueError("values must have sorted unique proposal IDs")
+        for value in self.values:
+            if value.dominated != _is_dominated(value, self.values):
+                raise ValueError(
+                    "dominated must be recomputed from the complete values"
+                )
         selected = tuple(
             value
             for value in self.values
@@ -763,7 +768,8 @@ def _resource_cost(proposal: ActionProposal, budget: ResourceBudget) -> float:
 def _fits_budget(proposal: ActionProposal, budget: ResourceBudget) -> bool:
     cost = proposal.estimated_cost
     return (
-        cost.time_ticks <= budget.time_ticks
+        proposal.duration_ticks <= budget.time_ticks
+        and cost.time_ticks <= budget.time_ticks
         and cost.compute_units <= budget.compute_units
         and cost.memory_units <= budget.memory_units
         and cost.risk <= budget.risk_limit
@@ -771,11 +777,11 @@ def _fits_budget(proposal: ActionProposal, budget: ResourceBudget) -> bool:
     )
 
 
-def _with_dominance(
+def _is_dominated(
     value: ActionValue,
     alternatives: tuple[ActionValue, ...],
-) -> ActionValue:
-    dominated = (
+) -> bool:
+    return (
         value.eligible
         and not value.reversible
         and any(
@@ -789,6 +795,12 @@ def _with_dominance(
             for alternative in alternatives
         )
     )
+
+
+def _with_dominance(
+    value: ActionValue,
+    alternatives: tuple[ActionValue, ...],
+) -> ActionValue:
     return ActionValue(
         proposal_id=value.proposal_id,
         action=value.action,
@@ -799,7 +811,7 @@ def _with_dominance(
         information_value=value.information_value,
         total_value=value.total_value,
         eligible=value.eligible,
-        dominated=dominated,
+        dominated=_is_dominated(value, alternatives),
     )
 
 

@@ -102,6 +102,7 @@ def _proposal(
     reversible: bool,
     compute_units: int = 1,
     risk: float = 0.0,
+    duration_ticks: int = 1,
 ) -> ActionProposal:
     return ActionProposal(
         schema_version=CURRENT_SCHEMA_VERSION,
@@ -111,7 +112,7 @@ def _proposal(
         parameters=(),
         observable_preconditions=(),
         reversible=reversible,
-        duration_ticks=1,
+        duration_ticks=duration_ticks,
         estimated_cost=ResourceCost(
             schema_version=CURRENT_SCHEMA_VERSION,
             time_ticks=1,
@@ -297,6 +298,23 @@ def test_budget_is_a_hard_eligibility_boundary() -> None:
     assert result.decision.action == "feasible"
 
 
+def test_budget_gate_includes_public_action_duration() -> None:
+    long = _proposal("long", reversible=True, duration_ticks=2)
+    short = _proposal("short", reversible=True)
+
+    result = _arbitrate(
+        (long, short),
+        (
+            _prediction(long, (("safe", 1.0, True),)),
+            _prediction(short, (("safe", 1.0, True),)),
+        ),
+    )
+
+    by_action = {item.action: item for item in result.values}
+    assert by_action["long"].eligible is False
+    assert result.decision.action == "short"
+
+
 def test_resource_fraction_handles_unbounded_contract_integers() -> None:
     huge = 10**1000
     proposal = _proposal("huge", reversible=True, compute_units=huge)
@@ -437,6 +455,24 @@ def test_independent_result_must_select_the_canonical_winner() -> None:
             decision=worse_only.decision,
             values=result.values,
         )
+
+
+def test_independent_result_must_recompute_dominance_before_selection() -> None:
+    winner = _proposal("commit", reversible=False)
+    lower = _proposal("probe", reversible=True)
+    winner_prediction = _prediction(winner, (("safe", 1.0, True),))
+    lower_prediction = _prediction(lower, (("unsafe", 1.0, False),))
+    result = _arbitrate(
+        (winner, lower),
+        (winner_prediction, lower_prediction),
+    )
+    lower_only = _arbitrate((lower,), (lower_prediction,))
+    winner_value = next(value for value in result.values if value.action == "commit")
+    object.__setattr__(winner_value, "dominated", True)
+    object.__setattr__(result, "decision", lower_only.decision)
+
+    with pytest.raises(ValueError, match="dominated must be recomputed"):
+        result.__post_init__()
 
 
 def test_provenance_is_rejected_before_an_unbounded_union() -> None:
