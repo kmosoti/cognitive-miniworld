@@ -205,7 +205,8 @@ def registered_marker_combinations() -> tuple[frozenset[str], ...]:
     is also `freethreaded`, so an expression like `performance and not
     freethreaded` would satisfy a synthetic performance-only test while
     collecting nothing real.  Coverage must be judged against combinations that
-    exist.  Both decorator marks and module-level `pytestmark` are read.
+    exist.  Module-level `pytestmark`, class decorators, and function decorators
+    are all read, because pytest propagates each of them to the test.
     """
     registered = set(registered_markers())
     combinations: set[frozenset[str]] = set()
@@ -228,19 +229,26 @@ def registered_marker_combinations() -> tuple[frozenset[str], ...]:
                 current = value.func if isinstance(value, ast.Call) else value
                 if isinstance(current, ast.Attribute) and current.attr in registered:
                     module_marks.add(current.attr)
-        for node in ast.walk(tree):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            if not node.name.startswith("test_"):
-                continue
-            marks = set(module_marks)
-            for decorator in node.decorator_list:
+        def _marks_of(node: ast.AST) -> set[str]:
+            found: set[str] = set()
+            for decorator in getattr(node, "decorator_list", []):
                 current = (
                     decorator.func if isinstance(decorator, ast.Call) else decorator
                 )
                 if isinstance(current, ast.Attribute) and current.attr in registered:
-                    marks.add(current.attr)
-            combinations.add(frozenset(marks))
+                    found.add(current.attr)
+            return found
+
+        def _visit(body: list[ast.stmt], inherited: set[str]) -> None:
+            for node in body:
+                if isinstance(node, ast.ClassDef):
+                    _visit(node.body, inherited | _marks_of(node))
+                elif isinstance(
+                    node, (ast.FunctionDef, ast.AsyncFunctionDef)
+                ) and node.name.startswith("test_"):
+                    combinations.add(frozenset(inherited | _marks_of(node)))
+
+        _visit(tree.body, module_marks)
     return tuple(sorted(combinations, key=lambda s: tuple(sorted(s))))
 
 
