@@ -22,6 +22,8 @@ def _require_float(
 ) -> float:
     if type(value) is not float or not math.isfinite(value):
         raise ValueError(f"{field} must be a finite float")
+    if value == 0.0 and math.copysign(1.0, value) < 0.0:
+        raise ValueError(f"{field} must use canonical positive zero")
     if minimum is not None and value < minimum:
         raise ValueError(f"{field} must be >= {minimum}")
     return value
@@ -39,7 +41,7 @@ def _require_text(value: object, field: str) -> None:
 
 
 class ActionName(StrEnum):
-    """The complete first-release action vocabulary from EPIC section 7.2."""
+    """The complete first-release action vocabulary."""
 
     MOVE = "move"
     INSPECT = "inspect"
@@ -164,6 +166,140 @@ class DelayedEffect:
 
 
 @dataclass(frozen=True, slots=True)
+class DemandSchedule:
+    """Evaluator-only ambient-demand change applied at a world tick."""
+
+    change_id: str
+    due_tick: int
+    multiplier: float
+
+    def __post_init__(self) -> None:
+        _require_text(self.change_id, "change_id")
+        _require_int(self.due_tick, "due_tick", minimum=1)
+        _require_float(self.multiplier, "multiplier", minimum=0.0)
+        if self.multiplier == 0.0:
+            raise ValueError("multiplier must be > 0.0")
+
+
+@dataclass(frozen=True, slots=True)
+class SensorReliabilitySchedule:
+    """Evaluator-only change to actual, rather than reported, reliability."""
+
+    change_id: str
+    due_tick: int
+    reliability: float
+
+    def __post_init__(self) -> None:
+        _require_text(self.change_id, "change_id")
+        _require_int(self.due_tick, "due_tick", minimum=1)
+        _require_probability(self.reliability, "reliability")
+
+
+@dataclass(frozen=True, slots=True)
+class ActionRuleSchedule:
+    """Evaluator-only replacement of selected action-rule fields."""
+
+    change_id: str
+    due_tick: int
+    action: ActionName
+    duration_ticks: int | None = None
+    energy_cost: float | None = None
+    integrity_cost: float | None = None
+    energy_gain: float | None = None
+    integrity_gain: float | None = None
+
+    def __post_init__(self) -> None:
+        _require_text(self.change_id, "change_id")
+        _require_int(self.due_tick, "due_tick", minimum=1)
+        if type(self.action) is not ActionName:
+            raise TypeError("action must be an ActionName")
+        if self.duration_ticks is not None:
+            _require_int(self.duration_ticks, "duration_ticks", minimum=1)
+        for field, value in (
+            ("energy_cost", self.energy_cost),
+            ("integrity_cost", self.integrity_cost),
+            ("energy_gain", self.energy_gain),
+            ("integrity_gain", self.integrity_gain),
+        ):
+            if value is not None:
+                _require_float(value, field, minimum=0.0)
+        if all(
+            value is None
+            for value in (
+                self.duration_ticks,
+                self.energy_cost,
+                self.integrity_cost,
+                self.energy_gain,
+                self.integrity_gain,
+            )
+        ):
+            raise ValueError("an action-rule schedule must change at least one field")
+
+
+@dataclass(frozen=True, slots=True)
+class HazardSchedule:
+    """Evaluator-only activation or cost change for a named hazard."""
+
+    change_id: str
+    due_tick: int
+    hazard_id: str
+    active: bool
+    integrity_cost_per_tick: float | None = None
+
+    def __post_init__(self) -> None:
+        _require_text(self.change_id, "change_id")
+        _require_int(self.due_tick, "due_tick", minimum=1)
+        _require_text(self.hazard_id, "hazard_id")
+        if type(self.active) is not bool:
+            raise TypeError("active must be a bool")
+        if self.integrity_cost_per_tick is not None:
+            _require_float(
+                self.integrity_cost_per_tick,
+                "integrity_cost_per_tick",
+                minimum=0.0,
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceSchedule:
+    """Evaluator-only absolute unit count for a named resource."""
+
+    change_id: str
+    due_tick: int
+    resource_id: str
+    units: int
+
+    def __post_init__(self) -> None:
+        _require_text(self.change_id, "change_id")
+        _require_int(self.due_tick, "due_tick", minimum=1)
+        _require_text(self.resource_id, "resource_id")
+        _require_int(self.units, "units")
+
+
+type ScheduledWorldChange = (
+    DemandSchedule
+    | SensorReliabilitySchedule
+    | ActionRuleSchedule
+    | HazardSchedule
+    | ResourceSchedule
+)
+
+
+def _scheduled_target(change: ScheduledWorldChange) -> tuple[str, str]:
+    if type(change) is DemandSchedule:
+        return ("demand", "ambient")
+    if type(change) is SensorReliabilitySchedule:
+        return ("sensor_reliability", "actual")
+    if type(change) is ActionRuleSchedule:
+        return ("action_rule", change.action.value)
+    if type(change) is HazardSchedule:
+        return ("hazard", change.hazard_id)
+    if type(change) is ResourceSchedule:
+        return ("resource", change.resource_id)
+    raise AssertionError("unsupported scheduled world change")
+
+
+@dataclass(frozen=True, slots=True)
 class WorldConfig:
     """Immutable scenario parameters consumed by the pure kernel."""
 
@@ -227,7 +363,9 @@ class WorldState:
     resources: tuple[ResourceCell, ...]
     hazards: tuple[HazardCell, ...]
     sensor_reliability: float
+    reported_sensor_reliability: float
     delayed_effects: tuple[DelayedEffect, ...]
+    scheduled_changes: tuple[ScheduledWorldChange, ...]
     compute_allowance: int
     world_rng: RngSnapshot
     resource_unit_capacity: int
@@ -258,9 +396,14 @@ class WorldState:
         if self.ambient_demand_multiplier == 0.0:
             raise ValueError("ambient_demand_multiplier must be > 0.0")
         _require_probability(self.sensor_reliability, "sensor_reliability")
+        _require_probability(
+            self.reported_sensor_reliability,
+            "reported_sensor_reliability",
+        )
         self._require_resources()
         self._require_hazards()
         self._require_delayed_effects()
+        self._require_scheduled_changes()
         _require_int(self.compute_allowance, "compute_allowance", minimum=1)
         if self.compute_allowance != self.config.compute_allowance:
             raise ValueError("compute_allowance must match the scenario config")
@@ -335,6 +478,54 @@ class WorldState:
         if any(effect.due_tick <= self.tick for effect in self.delayed_effects):
             raise ValueError("delayed_effects must be scheduled after the current tick")
 
+    def _require_scheduled_changes(self) -> None:
+        allowed_types = (
+            DemandSchedule,
+            SensorReliabilitySchedule,
+            ActionRuleSchedule,
+            HazardSchedule,
+            ResourceSchedule,
+        )
+        if type(self.scheduled_changes) is not tuple or any(
+            type(change) not in allowed_types for change in self.scheduled_changes
+        ):
+            raise TypeError("scheduled_changes contains an unsupported change")
+        keys = tuple(
+            (change.due_tick, change.change_id)
+            for change in self.scheduled_changes
+        )
+        if keys != tuple(sorted(keys)) or len(keys) != len(set(keys)):
+            raise ValueError(
+                "scheduled_changes must have sorted unique due/id keys"
+            )
+        identifiers = tuple(change.change_id for change in self.scheduled_changes)
+        if len(identifiers) != len(set(identifiers)):
+            raise ValueError("scheduled change identifiers must be unique")
+        writes = tuple(
+            (change.due_tick, *_scheduled_target(change))
+            for change in self.scheduled_changes
+        )
+        if len(writes) != len(set(writes)):
+            raise ValueError(
+                "scheduled_changes must not write the same target twice per tick"
+            )
+        if any(change.due_tick <= self.tick for change in self.scheduled_changes):
+            raise ValueError("scheduled_changes must occur after the current tick")
+        hazard_ids = {hazard.hazard_id for hazard in self.hazards}
+        resource_ids = {resource.resource_id for resource in self.resources}
+        if any(
+            type(change) is HazardSchedule
+            and change.hazard_id not in hazard_ids
+            for change in self.scheduled_changes
+        ):
+            raise ValueError("a hazard schedule targets an unknown hazard")
+        if any(
+            type(change) is ResourceSchedule
+            and change.resource_id not in resource_ids
+            for change in self.scheduled_changes
+        ):
+            raise ValueError("a resource schedule targets an unknown resource")
+
 
 def create_world_state(
     *,
@@ -347,7 +538,9 @@ def create_world_state(
     resources: tuple[ResourceCell, ...] = (),
     hazards: tuple[HazardCell, ...] = (),
     sensor_reliability: float = 1.0,
+    reported_sensor_reliability: float | None = None,
     delayed_effects: tuple[DelayedEffect, ...] = (),
+    scheduled_changes: tuple[ScheduledWorldChange, ...] = (),
 ) -> WorldState:
     """Construct a canonical initial state without exposing mutable containers."""
 
@@ -357,6 +550,17 @@ def create_world_state(
     ordered_hazards = tuple(sorted(hazards, key=lambda hazard: hazard.hazard_id))
     ordered_effects = tuple(
         sorted(delayed_effects, key=lambda effect: (effect.due_tick, effect.effect_id))
+    )
+    ordered_changes = tuple(
+        sorted(
+            scheduled_changes,
+            key=lambda change: (change.due_tick, change.change_id),
+        )
+    )
+    reported_reliability = (
+        sensor_reliability
+        if reported_sensor_reliability is None
+        else reported_sensor_reliability
     )
     return WorldState(
         config=config,
@@ -369,7 +573,9 @@ def create_world_state(
         resources=ordered_resources,
         hazards=ordered_hazards,
         sensor_reliability=sensor_reliability,
+        reported_sensor_reliability=reported_reliability,
         delayed_effects=ordered_effects,
+        scheduled_changes=ordered_changes,
         compute_allowance=config.compute_allowance,
         world_rng=world_rng,
         resource_unit_capacity=sum(resource.units for resource in ordered_resources),
@@ -381,11 +587,17 @@ def create_world_state(
 __all__ = [
     "ActionName",
     "ActionRule",
+    "ActionRuleSchedule",
     "DelayedEffect",
     "DelayedEffectTemplate",
+    "DemandSchedule",
     "HazardCell",
+    "HazardSchedule",
     "Position",
     "ResourceCell",
+    "ResourceSchedule",
+    "ScheduledWorldChange",
+    "SensorReliabilitySchedule",
     "WorldConfig",
     "create_world_state",
 ]

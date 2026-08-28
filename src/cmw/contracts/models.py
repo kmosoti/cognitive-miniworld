@@ -4,6 +4,7 @@ from cmw.contracts._base import (
     CostedContract,
     Scalar,
     VersionedStruct,
+    _harden_object_assignment,
     require_bool,
     require_distribution,
     require_float,
@@ -691,6 +692,37 @@ class PlasticitySchedule(
             raise TypeError("provenance must be Provenance")
         if type(self.uncertainty) is not Uncertainty:
             raise TypeError("uncertainty must be Uncertainty")
+
+
+for _contract_struct in (
+    Provenance,
+    Uncertainty,
+    FeatureValue,
+    ResourceCost,
+    RationaleComponent,
+    StateHypothesis,
+    ReferencePoint,
+    PredictedOutcome,
+    EligibilityEntry,
+    ReliabilityEstimate,
+    WorkspaceEntry,
+    ObservationEnvelope,
+    BeliefState,
+    ReferenceTrajectory,
+    ActionProposal,
+    ActionDecision,
+    PredictionDistribution,
+    ErrorBundle,
+    ExperienceTrace,
+    ResourceBudget,
+    SelfEstimate,
+    ProcessingPriority,
+    ComputeAllocation,
+    AppraisalVector,
+    WorkspaceState,
+    PlasticitySchedule,
+):
+    _harden_object_assignment(_contract_struct)
 
 
 type Contract = (

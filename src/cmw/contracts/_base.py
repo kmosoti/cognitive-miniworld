@@ -1,13 +1,60 @@
 """Shared validation for immutable, versioned data contracts."""
 
 import math
-from typing import Final
+from typing import Final, Protocol, cast
 
 import msgspec
 
 CURRENT_SCHEMA_VERSION: Final = 1
 
 type Scalar = bool | int | float | str | None
+
+
+class _ReadOnlyMember:
+    """Forward a msgspec member read while closing ``object.__setattr__``."""
+
+    __slots__ = ("_member",)
+
+    def __init__(self, member: object) -> None:
+        self._member = cast(_Descriptor, member)
+
+    def __get__(self, instance: object, owner: type[object] | None = None) -> object:
+        if instance is None:
+            return self
+        return self._member.__get__(instance, owner)
+
+    def __set__(self, instance: object, value: object) -> None:
+        raise TypeError("immutable contract values are frozen")
+
+
+class _Descriptor(Protocol):
+    def __get__(
+        self, instance: object, owner: type[object] | None = None
+    ) -> object: ...
+
+
+def _harden_object_assignment(struct_type: type[msgspec.Struct]) -> None:
+    """Close the low-level assignment escape hatch on a frozen struct.
+
+    ``msgspec``'s regular frozen guard protects normal attribute assignment,
+    but ``object.__setattr__`` can otherwise bypass it.  Wrapping each member
+    with a data descriptor makes the same protection apply transitively to
+    immutable values handed across component boundaries.
+    """
+
+    fields = msgspec.structs.fields(struct_type)
+    for field in fields:
+        member = next(
+            (
+                owner.__dict__.get(field.name)
+                for owner in struct_type.__mro__
+                if field.name in owner.__dict__
+            ),
+            None,
+        )
+        if member is None or isinstance(member, _ReadOnlyMember):
+            continue
+        setattr(struct_type, field.name, _ReadOnlyMember(member))
 
 
 def require_bool(value: object, field: str) -> None:
@@ -23,6 +70,8 @@ def require_int(value: object, field: str, *, minimum: int = 0) -> None:
 def require_float(value: object, field: str) -> float:
     if type(value) is not float or not math.isfinite(value):
         raise ValueError(f"{field} must be a finite float")
+    if value == 0.0 and math.copysign(1.0, value) < 0.0:
+        raise ValueError(f"{field} must use canonical positive zero")
     return value
 
 
@@ -76,8 +125,8 @@ def require_tuple_of(value: object, item_type: type[object], field: str) -> None
 def require_scalar(value: object, field: str) -> None:
     if type(value) not in {bool, int, float, str, type(None)}:
         raise TypeError(f"{field} must be an immutable JSON scalar")
-    if type(value) is float and not math.isfinite(value):
-        raise ValueError(f"{field} must not contain a non-finite float")
+    if type(value) is float:
+        require_float(value, field)
 
 
 def require_distribution(probabilities: tuple[float, ...], field: str) -> None:

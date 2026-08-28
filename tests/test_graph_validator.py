@@ -1,4 +1,4 @@
-"""The evidence graph is a CI gate (KICKOFF, "Before MW-001", step 3).
+"""The evidence graph is a CI gate.
 
 It must pass on the committed graph and it must be able to fail: a gate
 that cannot go red is not a gate.

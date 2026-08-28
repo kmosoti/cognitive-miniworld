@@ -1,5 +1,7 @@
 """Lossless and byte-stable serialization for every public contract."""
 
+import math
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -26,6 +28,59 @@ def test_every_contract_round_trips_losslessly(
         assert decoded == contract
         assert type(decoded) is type(contract)
         assert encode_contract(decoded) == encoded
+
+
+def test_observation_nested_graph_round_trips_after_hardening(
+    provenance: Provenance,
+    uncertainty: Uncertainty,
+    feature: FeatureValue,
+) -> None:
+    observation = ObservationEnvelope(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        unit_cost=0,
+        event_id="observation-nested",
+        tick=2,
+        modality="interoceptive",
+        latency_ticks=0,
+        reliability=0.9,
+        values=(feature,),
+        provenance=provenance,
+        uncertainty=uncertainty,
+    )
+
+    encoded = encode_contract(observation)
+    decoded = decode_contract(encoded, ObservationEnvelope)
+
+    assert decoded == observation
+    assert encode_contract(decoded) == encoded
+
+
+def test_observation_nested_graph_rejects_low_level_mutation(
+    provenance: Provenance,
+    uncertainty: Uncertainty,
+    feature: FeatureValue,
+) -> None:
+    observation = ObservationEnvelope(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        unit_cost=0,
+        event_id="observation-nested",
+        tick=2,
+        modality="interoceptive",
+        latency_ticks=0,
+        reliability=0.9,
+        values=(feature,),
+        provenance=provenance,
+        uncertainty=uncertainty,
+    )
+
+    for value, field in (
+        (observation, "reliability"),
+        (feature, "value"),
+        (provenance, "producer"),
+        (uncertainty, "confidence"),
+    ):
+        with pytest.raises(TypeError, match="frozen"):
+            object.__setattr__(value, field, getattr(value, field))
 
 
 def test_canonical_json_has_a_stable_snapshot(
@@ -64,7 +119,10 @@ def test_canonical_json_has_a_stable_snapshot(
         st.none(),
         st.booleans(),
         st.integers(),
-        st.floats(allow_nan=False, allow_infinity=False),
+        st.floats(allow_nan=False, allow_infinity=False).filter(
+            lambda candidate: candidate != 0.0
+            or math.copysign(1.0, candidate) > 0.0
+        ),
         st.text(),
     )
 )

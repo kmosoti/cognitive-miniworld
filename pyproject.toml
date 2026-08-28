@@ -1,6 +1,6 @@
 [project]
 name = "cognitive-miniworld"
-version = "0.4.0"
+version = "0.7.0"
 description = "ViabilityGrid: a deterministic testbed for cognitive primitives"
 readme = "README.md"
 requires-python = ">=3.14.7,<3.15"
@@ -12,7 +12,6 @@ dependencies = [
 Repository = "https://github.com/kmosoti/cognitive-miniworld"
 Issues = "https://github.com/kmosoti/cognitive-miniworld/issues"
 GORDIAN = "https://github.com/users/kmosoti/projects/8"
-Epic = "https://github.com/kmosoti/cognitive-miniworld/blob/main/EPIC-001-cognitive-miniworld.md"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
@@ -42,9 +41,9 @@ src = ["src", "tests"]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "TID", "N"]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-"random".msg = "EPIC §5.1: randomness flows through cmw.rng named streams (MW-003)."
-"uuid".msg = "EPIC §5.2: identifiers must be deterministic, not uuid4."
-"numpy.random".msg = "EPIC §5.1: use cmw.rng named streams, not numpy module-global RNG."
+"random".msg = "Determinism invariant: randomness flows through cmw.rng named streams."
+"uuid".msg = "Determinism invariant: identifiers must be deterministic, not uuid4."
+"numpy.random".msg = "Determinism invariant: use cmw.rng named streams, not numpy module-global RNG."
 
 # --------------------------------------------------------------- types ----
 [tool.ty.environment]
@@ -55,7 +54,7 @@ python-version = "3.14"
 addopts = "-q --strict-markers --strict-config"
 testpaths = ["tests"]
 markers = [
-    "property: Hypothesis property test (EPIC §14).",
+    "property: Hypothesis property test.",
     "replay: deterministic replay gate (lands with MW-003).",
     "smoke: fast experiment smoke run (lands with MW-005).",
     "freethreaded: requires the CPython free-threaded build with the GIL disabled.",
