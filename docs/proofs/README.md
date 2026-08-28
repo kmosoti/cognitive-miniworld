@@ -9,8 +9,8 @@ claim is worth stating in a form that can be checked rather than argued.
 | File | Establishes |
 |---|---|
 | `Manifest.lean` | The rebuilt-set validation loop is quadratic and the hoisted form linear; the rewrite is semantics-preserving; the worst case at the declared limits is 10 000 100 000 elementary operations against 200 000. |
-| `Probe.lean` | The scaling gate's verdict is a function of the per-worker medians alone, so `TASK_ITERATIONS` / `TIMING_SAMPLES` cannot change which programs pass; the constant reduction cuts modelled work 5.85x. |
-| `Runs.lean` | Every measured run, before and after, passes the committed 5% gate. |
+| `Probe.lean` | The scaling gate's verdict is a pure function of the per-worker medians *it is given*, and what that does **not** settle: the constants determine those medians, so they can change the verdict. Records the retracted threshold-preservation claim and the CI run that refuted it. |
+| `Runs.lean` | Every run measured on the 12-core development machine, before and after, passes the committed 5% gate. This did not generalize to CI's four-vCPU runners. |
 
 ## Reproducing
 
