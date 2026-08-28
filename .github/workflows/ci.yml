@@ -4,19 +4,24 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Nightly performance tier: the relative scaling gate is an environment
+    # check, so it needs a cadence that is independent of contribution volume.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   gates:
     name: quality gates (Python 3.14.7t)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       UV_PYTHON: 3.14.7t
     steps:
@@ -65,16 +70,20 @@ jobs:
           uv run --locked python knowledge/validate_graph.py \
             knowledge/cognitive-miniworld-knowledge-graph.jsonld
 
-      # One invocation collects every marker, so the replay gates from
-      # MW-003 and the fixture/baseline smoke experiments from MW-005/MW-007
-      # fail this job without a workflow change.
+      # This job deliberately skips the `performance` tier, which measures
+      # relative thread scaling of the runtime rather than the correctness of
+      # this repository; it runs in the `performance` job below. Every other
+      # marker -- replay (MW-003), smoke (MW-005/MW-007), property,
+      # freethreaded -- is still collected here, and
+      # `test_every_registered_marker_is_claimed_by_a_ci_invocation` fails the
+      # run if a newly registered marker is left out of this workflow.
       - name: Tests (unit, property, replay, smoke)
-        run: uv run --locked pytest
+        run: uv run --locked pytest -m "not performance"
 
   gil-compatibility:
     name: compatibility (Python 3.14.7 with GIL)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       UV_PYTHON: 3.14.7+gil
     steps:
@@ -111,3 +120,31 @@ jobs:
 
       - name: Compatibility tests
         run: uv run --locked pytest -m "not freethreaded and not performance"
+
+  performance:
+    name: performance tier (Python 3.14.7t)
+    # Relative thread-scaling timings are meaningless on a contended runner and
+    # are not a correctness signal, so this tier is kept off the pull-request
+    # path and runs on main, nightly, and on demand instead.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      UV_PYTHON: 3.14.7t
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install "$UV_PYTHON"
+
+      - name: Sync locked environment
+        run: uv sync --locked --all-groups
+
+      - name: Scaling gate
+        run: uv run --locked pytest -m performance

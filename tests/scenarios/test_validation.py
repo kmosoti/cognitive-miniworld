@@ -7,6 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import cast
 
+import msgspec
 import pytest
 
 import cmw.scenarios as scenarios
@@ -137,3 +138,38 @@ def test_registry_and_lookup_do_not_alias_mutable_manifest_storage() -> None:
     field_name = "scenario_id"
     with pytest.raises(AttributeError):
         setattr(first, field_name, "tampered")
+
+
+def _stimulus_change(
+    manifest: scenarios.ScenarioManifest, stimulus_id: str
+) -> scenarios.StimulusChange:
+    return scenarios.StimulusChange(
+        schema_version=manifest.schema_version,
+        tick=1,
+        stimulus_id=stimulus_id,
+        intensity=0.5,
+    )
+
+
+def test_stimulus_schedule_targeting_an_undeclared_stimulus_is_rejected(
+    manifest: scenarios.ScenarioManifest,
+) -> None:
+    change = _stimulus_change(manifest, "undeclared-stimulus")
+    assert change.stimulus_id not in {
+        stimulus.stimulus_id for stimulus in manifest.stimuli
+    }
+
+    with pytest.raises(
+        ValueError, match="stimulus schedule targets an unknown stimulus"
+    ):
+        msgspec.structs.replace(manifest, schedule=(change,))
+
+
+def test_stimulus_schedule_targeting_a_declared_stimulus_is_accepted(
+    manifest: scenarios.ScenarioManifest,
+) -> None:
+    change = _stimulus_change(manifest, manifest.stimuli[0].stimulus_id)
+
+    accepted = msgspec.structs.replace(manifest, schedule=(change,))
+
+    assert accepted.schedule == (change,)
