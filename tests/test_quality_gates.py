@@ -198,6 +198,21 @@ def _pytest_arguments(command: list[str]) -> list[str] | None:
     return None
 
 
+def _marker_expression(arguments: list[str]) -> str | None:
+    """Return the ``-m`` expression, or ``None`` when the run is unrestricted.
+
+    Both the separated (``-m expr``) and attached (``-mexpr``) short-option
+    forms are accepted; pytest takes either, and reading only the separated one
+    would score a restricted run as unrestricted and claim every marker.
+    """
+    for index, argument in enumerate(arguments):
+        if argument == "-m" and index + 1 < len(arguments):
+            return arguments[index + 1]
+        if argument.startswith("-m") and len(argument) > 2:
+            return argument[2:]
+    return None
+
+
 def registered_marker_combinations() -> tuple[frozenset[str], ...]:
     """Marker sets that actually occur on tests, restricted to registered names.
 
@@ -229,15 +244,48 @@ def registered_marker_combinations() -> tuple[frozenset[str], ...]:
                 current = value.func if isinstance(value, ast.Call) else value
                 if isinstance(current, ast.Attribute) and current.attr in registered:
                     module_marks.add(current.attr)
+        def _mark_names(node: ast.AST) -> set[str]:
+            current = node.func if isinstance(node, ast.Call) else node
+            if isinstance(current, ast.Attribute) and current.attr in registered:
+                return {current.attr}
+            return set()
+
         def _marks_of(node: ast.AST) -> set[str]:
             found: set[str] = set()
             for decorator in getattr(node, "decorator_list", []):
-                current = (
-                    decorator.func if isinstance(decorator, ast.Call) else decorator
-                )
-                if isinstance(current, ast.Attribute) and current.attr in registered:
-                    found.add(current.attr)
+                found |= _mark_names(decorator)
             return found
+
+        def _param_marks(node: ast.AST) -> tuple[frozenset[str], ...]:
+            """Marker sets attached to individual `pytest.param` cases.
+
+            pytest treats a parametrised case as carrying its own marks, so a
+            tier applied only to one param is a real tier that this scan must
+            see.
+            """
+            variants: set[frozenset[str]] = set()
+            for inner in ast.walk(node):
+                if not isinstance(inner, ast.Call):
+                    continue
+                function = inner.func
+                if not (
+                    isinstance(function, ast.Attribute) and function.attr == "param"
+                ):
+                    continue
+                for keyword in inner.keywords:
+                    if keyword.arg != "marks":
+                        continue
+                    values = (
+                        keyword.value.elts
+                        if isinstance(keyword.value, (ast.List, ast.Tuple))
+                        else [keyword.value]
+                    )
+                    marks: set[str] = set()
+                    for value in values:
+                        marks |= _mark_names(value)
+                    if marks:
+                        variants.add(frozenset(marks))
+            return tuple(variants)
 
         def _visit(body: list[ast.stmt], inherited: set[str]) -> None:
             for node in body:
@@ -246,7 +294,10 @@ def registered_marker_combinations() -> tuple[frozenset[str], ...]:
                 elif isinstance(
                     node, (ast.FunctionDef, ast.AsyncFunctionDef)
                 ) and node.name.startswith("test_"):
-                    combinations.add(frozenset(inherited | _marks_of(node)))
+                    base = inherited | _marks_of(node)
+                    combinations.add(frozenset(base))
+                    for extra in _param_marks(node):
+                        combinations.add(frozenset(base | extra))
 
         _visit(tree.body, module_marks)
     return tuple(sorted(combinations, key=lambda s: tuple(sorted(s))))
@@ -275,10 +326,7 @@ def workflow_marker_expressions() -> tuple[str | None, ...]:
                 arguments = _pytest_arguments(simple)
                 if arguments is None:
                     continue
-                if "-m" not in arguments:
-                    expressions.append(None)
-                    continue
-                expressions.append(arguments[arguments.index("-m") + 1])
+                expressions.append(_marker_expression(arguments))
     return tuple(expressions)
 
 
