@@ -6,6 +6,7 @@ from typing import cast
 
 import pytest
 
+import cmw.agents.errors as error_module
 from cmw.agents import (
     ScalarAbsoluteErrorBaseline,
     TypedErrorDecomposer,
@@ -417,3 +418,51 @@ def test_decomposer_rejects_misaligned_or_untyped_public_inputs() -> None:
         )
     with pytest.raises(TypeError, match="ErrorBundle"):
         scalar_absolute_error(cast(ErrorBundle, 1.0))
+
+
+def test_decomposer_rejects_oversized_reference_before_horizon_scan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    before = _belief(40.0, 0, "before")
+    after = _belief(40.0, 1, "after")
+    canonical = _reference(80.0, 1)
+    oversized = ReferenceTrajectory(
+        schema_version=canonical.schema_version,
+        unit_cost=canonical.unit_cost,
+        trajectory_id=canonical.trajectory_id,
+        points=(
+            ReferencePoint(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                variable="earlier",
+                target=80.0,
+                tolerance=10.0,
+                horizon_tick=0,
+            ),
+            ReferencePoint(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                variable="later",
+                target=80.0,
+                tolerance=10.0,
+                horizon_tick=2,
+            ),
+        ),
+        priority=canonical.priority,
+        provenance=canonical.provenance,
+        uncertainty=canonical.uncertainty,
+    )
+
+    def unexpected_sorted(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("work rejection happened after the reference scan")
+
+    monkeypatch.setattr(error_module, "_MAX_WORK", 1)
+    monkeypatch.setattr(error_module, "sorted", unexpected_sorted, raising=False)
+
+    with pytest.raises(ValueError, match="deterministic work limit"):
+        TypedErrorDecomposer().decompose(
+            _prediction(40.0, before, 1),
+            before,
+            after,
+            oversized,
+            _observations(40.0, 1),
+        )

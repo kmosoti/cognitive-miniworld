@@ -228,10 +228,14 @@ class BeliefAffordanceGenerator:
             raise ValueError(
                 f"belief must contain at most {_MAX_HYPOTHESES} hypotheses"
             )
-        work = sum(
+        feature_scan_work = len(self.templates) * sum(
+            len(hypothesis.features) for hypothesis in belief.hypotheses
+        )
+        precondition_work = sum(
             len(belief.hypotheses) * max(1, len(template.observable_preconditions))
             for template in self.templates
         )
+        work = feature_scan_work + precondition_work
         if work > _MAX_WORK:
             raise ValueError(
                 "affordance generation exceeds its deterministic work limit"

@@ -76,6 +76,8 @@ def _reference_points(
     reference: ReferenceTrajectory,
     horizon_tick: int,
 ) -> tuple[ReferencePoint, ...]:
+    if len(reference.points) > _MAX_WORK:
+        raise ValueError("reference points exceed the deterministic work limit")
     points = tuple(
         sorted(
             (point for point in reference.points if point.horizon_tick == horizon_tick),

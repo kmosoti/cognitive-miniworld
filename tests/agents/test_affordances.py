@@ -6,6 +6,7 @@ from collections.abc import Iterable
 
 import pytest
 
+import cmw.agents.affordances as affordance_module
 from cmw.agents import (
     AffordanceTemplate,
     BeliefAffordanceGenerator,
@@ -214,6 +215,31 @@ def test_generation_is_deterministic_and_rejects_non_boolean_preconditions() -> 
     )
     with pytest.raises(TypeError, match="must be boolean"):
         generator.generate(malformed)
+
+
+def test_generation_counts_belief_feature_scans_before_support(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    belief = _belief(
+        _hypothesis(
+            "feature-heavy",
+            1.0,
+            (("first", True), ("second", True)),
+        )
+    )
+    generator = BeliefAffordanceGenerator(
+        templates=(_template("wait", "wait"),)
+    )
+
+    def unexpected_support(*args: object, **kwargs: object) -> tuple[float, float]:
+        del args, kwargs
+        raise AssertionError("work rejection happened after the feature scan")
+
+    monkeypatch.setattr(affordance_module, "_MAX_WORK", 2)
+    monkeypatch.setattr(affordance_module, "_support", unexpected_support)
+
+    with pytest.raises(ValueError, match="deterministic work limit"):
+        generator.generate(belief)
 
 
 def test_configuration_requires_canonical_unique_template_ids() -> None:
