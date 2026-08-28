@@ -937,6 +937,7 @@
         "cmw:claim/graded-decision-confidence"
       ],
       "testedBy": [
+        "cmw:experiment/delayed-action-arbitration",
         "cmw:experiment/appraisal-contrast"
       ],
       "@id": "cmw:primitive/action-arbitrator",
@@ -1058,6 +1059,7 @@
         "cmw:claim/complementary-learning-systems"
       ],
       "testedBy": [
+        "cmw:experiment/contextual-episodic-retrieval",
         "cmw:experiment/consolidation-interference",
         "cmw:experiment/stale-memory"
       ],
@@ -2099,6 +2101,20 @@
       "@type": "cmw:Metric"
     },
     {
+      "label": "Retrieval decision delta",
+      "direction": "Higher is better",
+      "unit": "paired decision quality with retrieval minus without retrieval",
+      "@id": "cmw:metric/decision-delta",
+      "@type": "cmw:Metric"
+    },
+    {
+      "label": "Stale episode selection rate",
+      "direction": "Lower is better",
+      "unit": "fraction of retrieval decisions selecting a stale partial match",
+      "@id": "cmw:metric/stale-selection-rate",
+      "@type": "cmw:Metric"
+    },
+    {
       "label": "ViabilityGrid Miniworld",
       "description": "A seeded, discrete-time, partially observable world with endogenous body variables, costly actions, delayed outcomes, predictable demand changes, distractor floods, stochastic noise, and sensor degradation.",
       "scenarioVariable": [
@@ -2148,6 +2164,7 @@
         "cmw:experiment/delayed-credit",
         "cmw:experiment/consolidation-interference",
         "cmw:experiment/stale-memory",
+        "cmw:experiment/delayed-action-arbitration",
         "cmw:experiment/appraisal-contrast",
         "cmw:experiment/sensor-degradation",
         "cmw:experiment/habit-reversal",
@@ -2429,6 +2446,46 @@
       "@type": "cmw:Experiment"
     },
     {
+      "label": "Contextual episodic retrieval",
+      "description": "A current cue and regime retrieve the exact recent episode ahead of a cue-matched stale regime, and the retrieved action improves paired decision quality over a fixed no-retrieval policy.",
+      "tests": [
+        "cmw:primitive/episodic-recorder"
+      ],
+      "primaryMetric": "cmw:metric/decision-delta",
+      "safetyMetric": "cmw:metric/stale-selection-rate",
+      "baseline": [
+        "cmw:baseline/fixed-wait-no-retrieval"
+      ],
+      "failureMode": [
+        "cmw:failure/stale-memory-substitution"
+      ],
+      "killTest": "Reject if mean paired decision delta is below 0.4, a stale partial match outranks the exact current context, or the selected exact-match score is below 1.0.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/contextual-episodic-retrieval",
+      "@type": "cmw:Experiment"
+    },
+    {
+      "label": "Delayed-consequence action arbitration",
+      "description": "On the canonical delayed_poison fixture, public predictive arbitration avoids a dominated irreversible consume while improving viability and reducing oracle regret against reactive fixed-setpoint control.",
+      "tests": [
+        "cmw:primitive/action-arbitrator"
+      ],
+      "primaryMetric": "cmw:metric/regret",
+      "safetyMetric": "cmw:metric/irreversible-errors",
+      "baseline": [
+        "cmw:baseline/reactive-static"
+      ],
+      "failureMode": [
+        "cmw:failure/proxy-regulation"
+      ],
+      "killTest": "Reject if the candidate fails to improve viability on any paired benchmark seed, incurs more than 0.03 oracle regret, fails to beat reactive regret, consumes irreversibly, or never demonstrates reversible dominance.",
+      "isPartOf": "cmw:miniworld/viability-grid",
+      "epistemicStatus": "cmw:status/project-hypothesis",
+      "@id": "cmw:experiment/delayed-action-arbitration",
+      "@type": "cmw:Experiment"
+    },
+    {
       "label": "Same valence, different control conditions",
       "description": "Changing certainty, imminence, agency, or controllability produces different control policies even when expected valence is held constant.",
       "tests": [
@@ -2573,6 +2630,11 @@
       "@type": "cmw:Baseline"
     },
     {
+      "label": "Fixed wait policy without episodic retrieval",
+      "@id": "cmw:baseline/fixed-wait-no-retrieval",
+      "@type": "cmw:Baseline"
+    },
+    {
       "label": "Valence-only policy signal",
       "@id": "cmw:baseline/valence-only",
       "@type": "cmw:Baseline"
@@ -2692,7 +2754,7 @@
       "identifier": "MW-CORE",
       "label": "Predictive closed-loop spine",
       "description": "Establish the smallest nonlinguistic loop that can estimate, predict, compare, choose, act, and learn from error.",
-      "status": "proposed",
+      "status": "complete",
       "implements": [
         "cmw:primitive/state-estimator",
         "cmw:primitive/forward-model",
@@ -2950,6 +3012,7 @@
         "cmw:experiment/delayed-credit",
         "cmw:experiment/consolidation-interference",
         "cmw:experiment/stale-memory",
+        "cmw:experiment/delayed-action-arbitration",
         "cmw:experiment/appraisal-contrast",
         "cmw:experiment/sensor-degradation",
         "cmw:experiment/habit-reversal",
@@ -3143,7 +3206,7 @@
       "identifier": "MW-014",
       "label": "Action arbitrator",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-011",
         "cmw:issue/MW-012",
@@ -3153,7 +3216,7 @@
         "cmw:primitive/action-arbitrator"
       ],
       "tests": [
-        "cmw:experiment/appraisal-contrast"
+        "cmw:experiment/delayed-action-arbitration"
       ],
       "acceptanceCriterion": [
         "Each decision includes a rationale and uncertainty.",
@@ -3289,7 +3352,7 @@
       "identifier": "MW-040",
       "label": "Episodic recorder",
       "priority": "P1",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-003",
         "cmw:issue/MW-012"
@@ -3298,8 +3361,7 @@
         "cmw:primitive/episodic-recorder"
       ],
       "tests": [
-        "cmw:experiment/stale-memory",
-        "cmw:experiment/consolidation-interference"
+        "cmw:experiment/contextual-episodic-retrieval"
       ],
       "acceptanceCriterion": [
         "Episodes record context, belief, references, proposal, prediction, action, outcome, errors, and provenance.",
