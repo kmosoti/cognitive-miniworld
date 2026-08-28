@@ -3048,7 +3048,7 @@
       "identifier": "MW-010",
       "label": "State estimator",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-002",
         "cmw:issue/MW-004",

@@ -15,8 +15,12 @@ from cmw.agents.curiosity import (
 )
 from cmw.agents.estimation import (
     LastObservationEstimator,
+    StateValue,
+    TabularStateEstimator,
+    TabularStateVariable,
     last_observation,
     last_observation_estimate,
+    marginal_probability,
 )
 from cmw.agents.reactive import (
     ReactiveFixedSetpointController,
@@ -43,10 +47,14 @@ __all__ = [
     "RandomCuriosityBaseline",
     "RandomCuriosityResult",
     "ReactiveFixedSetpointController",
+    "StateValue",
+    "TabularStateEstimator",
+    "TabularStateVariable",
     "baseline_coverage",
     "coverage_for",
     "last_observation",
     "last_observation_estimate",
+    "marginal_probability",
     "prediction_error_curiosity",
     "random_curiosity",
     "random_exploration",
