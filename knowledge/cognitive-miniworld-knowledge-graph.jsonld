@@ -2679,8 +2679,7 @@
         "cmw:issue/MW-004",
         "cmw:issue/MW-005",
         "cmw:issue/MW-006",
-        "cmw:issue/MW-007",
-        "cmw:issue/MW-008"
+        "cmw:issue/MW-007"
       ],
       "acceptanceCriterion": [
         "Deterministic replay passes end to end.",
@@ -3043,27 +3042,6 @@
       ],
       "isPartOf": "cmw:work/MW-FOUNDATION",
       "@id": "cmw:issue/MW-007",
-      "@type": "cmw:ImplementationIssue"
-    },
-    {
-      "identifier": "MW-008",
-      "label": "Manifest validation cost and CI tier split",
-      "priority": "P0",
-      "status": "complete",
-      "dependsOn": [
-        "cmw:issue/MW-001",
-        "cmw:issue/MW-005"
-      ],
-      "implements": [],
-      "tests": [],
-      "acceptanceCriterion": [
-        "Scenario manifest schedule validation is linear in declared stimuli and schedule length.",
-        "The relative concurrency performance gate runs outside the pull-request path without losing its worst-case margin.",
-        "Every registered pytest marker is selected by at least one continuous-integration invocation.",
-        "The unknown-stimulus schedule rejection is covered by a regression test."
-      ],
-      "isPartOf": "cmw:work/MW-FOUNDATION",
-      "@id": "cmw:issue/MW-008",
       "@type": "cmw:ImplementationIssue"
     },
     {

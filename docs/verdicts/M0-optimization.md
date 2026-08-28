@@ -1,4 +1,4 @@
-# MW-008 verdict — accepted
+# M0 optimization verdict — accepted
 
 - Removed the quadratic `set(stimulus_ids)` rebuild from `ScenarioManifest`
   schedule validation, and moved the free-threading scaling gate off the
@@ -15,22 +15,19 @@
   let pool startup dominate the 2-to-4 step and run 33137139162 failed with
   1 worker 0.279s, 2 workers 0.141s, 4 workers 0.147s. The original constants
   are retained; ADR-020 records the reasoning.
+- Marker coverage is now proved dynamically: each job records the node ids it
+  selected and a `coverage` job fails if their union is not the whole suite.
+  This replaced a static workflow parser that automated review defeated six
+  ways; the parser is deleted and `tests/test_quality_gates.py` is back to its
+  original 63 lines.
 - CI now runs `pytest -m "not performance"` on pull requests and moves the
   relative scaling gate to its own job on push to `main`, a nightly schedule,
   and manual dispatch; job timeouts drop from 15 minutes to 5 (10 for the
   timing job), and the concurrency group is keyed by event so a cron run cannot
   cancel a push build.
-- The tier split forfeits the old "one invocation collects every marker"
-  guarantee, so `test_every_registered_marker_is_claimed_by_a_ci_invocation`
-  now fails, naming the marker, when any marker registered in `pyproject.toml`
-  is selected by no pytest invocation in `ci.yml`. It parses both files with
-  `tomllib`, `shlex`, and `ast` only; no YAML dependency was added.
-- Deleting the performance job, or excluding a newly registered marker from the
-  pull-request path without adding a job, was confirmed to fail that guard.
-  Automated review found four further ways to defeat it -- a step merely named
-  `pytest ...`, an `echo pytest`, a YAML folded `>` block, and singleton-marker
-  semantics against the `{freethreaded, performance}` test -- each now fixed and
-  covered by a verified counterexample.
+- Dropping the performance job from the union leaves
+  `tests/test_free_threading.py::test_thread_pool_has_a_monotonic_scaling_curve`
+  uncovered, and the check reports that node id rather than a marker name.
 - The `ValueError("stimulus schedule targets an unknown stimulus")` branch that
   the optimization rewrote had no test; `tests/scenarios/test_validation.py`
   now covers both the undeclared-target rejection and the declared-target
@@ -44,6 +41,8 @@
   `performance` selections), the 227-node graph validator, and `uv build` pass
   locally, and CI is green on the pull request and on manual dispatch, the
   latter exercising the new performance job.
-- Deviations: GORDIAN has no MW-008 item; the number was chosen because
-  MW-001..007 are complete and MW-010 is the next proposed issue. The graph node
-  is recorded as a foundation defect fix against the MW-005 deliverable.
+- Deviations: this work carries no MW-### number and adds no knowledge-graph
+  node, because GORDIAN authorizes no issue for it. It is recorded here as
+  optimization work against the completed M0 foundation -- a defect fix to the
+  MW-005 scenario-manifest deliverable plus CI changes -- rather than as an
+  implementation issue the board never scoped.
