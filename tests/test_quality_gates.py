@@ -81,6 +81,47 @@ def registered_markers() -> tuple[str, ...]:
     return tuple(sorted(entry.split(":", 1)[0].strip() for entry in declared))
 
 
+def _run_command_blocks(text: str) -> tuple[str, ...]:
+    """Return the shell text of every ``run:`` block in the workflow.
+
+    Only content that a runner would actually execute is returned.  A line that
+    merely mentions pytest -- a step named ``pytest compatibility``, a comment,
+    or any other YAML metadata -- is not a command and must never be scored as
+    coverage, because an invocation the guard misreads as unrestricted would
+    claim every marker and silently disable this gate.
+
+    Both block and inline forms are handled: ``run: |`` (or ``>``) captures the
+    following more-indented lines, and ``run: <command>`` captures the rest of
+    its own line.
+    """
+    blocks: list[str] = []
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines):
+        raw = lines[index]
+        stripped = raw.strip()
+        key = stripped[2:].strip() if stripped.startswith("- ") else stripped
+        if not key.startswith("run:"):
+            index += 1
+            continue
+        indent = len(raw) - len(raw.lstrip())
+        remainder = key[len("run:") :].strip()
+        index += 1
+        if remainder not in ("|", ">", "|-", ">-", "|+", ">+"):
+            blocks.append(remainder)
+            continue
+        body: list[str] = []
+        while index < len(lines):
+            candidate = lines[index]
+            depth = len(candidate) - len(candidate.lstrip())
+            if candidate.strip() and depth <= indent:
+                break
+            body.append(candidate)
+            index += 1
+        blocks.append("\n".join(body))
+    return tuple(blocks)
+
+
 def _logical_lines(text: str) -> tuple[str, ...]:
     """Join backslash-continued shell lines and strip surrounding whitespace."""
     joined: list[str] = []
@@ -102,25 +143,27 @@ def workflow_marker_expressions() -> tuple[str | None, ...]:
 
     The workflow is read textually rather than as YAML: the approved dependency
     list carries no YAML parser, and the shape being checked is a shell command
-    inside a ``run:`` line, not the document structure.  ``None`` marks an
+    inside a ``run:`` block, not the document structure.  ``None`` marks an
     invocation with no ``-m`` expression, which selects every marker.
 
-    Backslash continuations are joined first, so a command wrapped across lines
-    cannot be misread as an unrestricted invocation and over-claim its markers.
+    Discovery is restricted to ``run:`` content so that YAML metadata mentioning
+    pytest cannot be misread as an unrestricted invocation.  Backslash
+    continuations are joined first, so a command wrapped across lines cannot
+    over-claim its markers either.
     """
     expressions: list[str | None] = []
-    for line in _logical_lines(WORKFLOW.read_text(encoding="utf-8")):
-        if line.startswith("#") or "pytest" not in line:
-            continue
-        command = line.split("run:", 1)[1] if "run:" in line else line
-        tokens = shlex.split(command, comments=True)
-        if "pytest" not in tokens:
-            continue
-        arguments = tokens[tokens.index("pytest") + 1 :]
-        if "-m" not in arguments:
-            expressions.append(None)
-            continue
-        expressions.append(arguments[arguments.index("-m") + 1])
+    for block in _run_command_blocks(WORKFLOW.read_text(encoding="utf-8")):
+        for line in _logical_lines(block):
+            if not line or line.startswith("#"):
+                continue
+            tokens = shlex.split(line, comments=True)
+            if "pytest" not in tokens:
+                continue
+            arguments = tokens[tokens.index("pytest") + 1 :]
+            if "-m" not in arguments:
+                expressions.append(None)
+                continue
+            expressions.append(arguments[arguments.index("-m") + 1])
     return tuple(expressions)
 
 
