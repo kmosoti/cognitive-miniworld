@@ -81,6 +81,28 @@ def registered_markers() -> tuple[str, ...]:
     return tuple(sorted(entry.split(":", 1)[0].strip() for entry in declared))
 
 
+def _fold(body: list[str]) -> str:
+    """Join a YAML folded (``>``) block the way YAML does.
+
+    Consecutive non-empty lines become one line joined by spaces; a blank line
+    terminates the run and starts a new one.  Without this, a command split
+    across a folded block is read as several commands, and the first fragment --
+    carrying no ``-m`` -- would claim every marker.
+    """
+    folded: list[str] = []
+    current: list[str] = []
+    for line in body:
+        if line.strip():
+            current.append(line.strip())
+            continue
+        if current:
+            folded.append(" ".join(current))
+            current = []
+    if current:
+        folded.append(" ".join(current))
+    return "\n".join(folded)
+
+
 def _run_command_blocks(text: str) -> tuple[str, ...]:
     """Return the shell text of every ``run:`` block in the workflow.
 
@@ -90,9 +112,9 @@ def _run_command_blocks(text: str) -> tuple[str, ...]:
     coverage, because an invocation the guard misreads as unrestricted would
     claim every marker and silently disable this gate.
 
-    Both block and inline forms are handled: ``run: |`` (or ``>``) captures the
-    following more-indented lines, and ``run: <command>`` captures the rest of
-    its own line.
+    Inline (``run: cmd``), literal (``run: |``) and folded (``run: >``) forms are
+    all handled, and folded blocks are joined before tokenizing so a wrapped
+    command is scored as the single command YAML would hand to the shell.
     """
     blocks: list[str] = []
     lines = text.splitlines()
@@ -107,9 +129,10 @@ def _run_command_blocks(text: str) -> tuple[str, ...]:
         indent = len(raw) - len(raw.lstrip())
         remainder = key[len("run:") :].strip()
         index += 1
-        if remainder not in ("|", ">", "|-", ">-", "|+", ">+"):
+        if not remainder or remainder[0] not in "|>":
             blocks.append(remainder)
             continue
+        folded = remainder[0] == ">"
         body: list[str] = []
         while index < len(lines):
             candidate = lines[index]
@@ -118,7 +141,7 @@ def _run_command_blocks(text: str) -> tuple[str, ...]:
                 break
             body.append(candidate)
             index += 1
-        blocks.append("\n".join(body))
+        blocks.append(_fold(body) if folded else "\n".join(body))
     return tuple(blocks)
 
 
