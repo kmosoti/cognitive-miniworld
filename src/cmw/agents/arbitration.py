@@ -640,12 +640,10 @@ def _prepare_inputs(
     # Inputs are frozen msgspec structs, deep-validated at every boundary that
     # can create them -- construction, decode, convert, and replace all run
     # ``__post_init__`` -- so re-running those validators here re-checks values
-    # that cannot have changed (ADR-027). Only properties the contracts do not
-    # themselves enforce remain: outcome-ID uniqueness here, evaluated
-    # feature-name uniqueness once the horizon points are known below, and
-    # every cross-object rule.
-    for prediction in predictions:
-        _validate_prediction(prediction)
+    # that cannot have changed (ADR-027). What remains are the properties no
+    # contract enforces and arbitration actually consumes: evaluated
+    # feature-name uniqueness, checked below once the horizon points are
+    # known, and every cross-object rule.
     if budget.tick != belief.revision_tick or error.tick != belief.revision_tick:
         raise ValueError("belief, error, and budget must describe the same tick")
 
@@ -703,14 +701,6 @@ def _prepare_inputs(
         ),
         work=work,
     )
-
-
-def _validate_prediction(prediction: PredictionDistribution) -> None:
-    # No contract enforces this: a distribution with repeated outcome IDs has
-    # ambiguous item identity, and scoring would weight one label twice.
-    outcome_ids = tuple(outcome.outcome_id for outcome in prediction.outcomes)
-    if len(outcome_ids) != len(set(outcome_ids)):
-        raise ValueError("prediction outcomes must have unique IDs")
 
 
 def _validate_evaluated_feature_names(

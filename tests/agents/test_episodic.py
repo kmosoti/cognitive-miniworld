@@ -621,3 +621,76 @@ def test_issue_specific_evidence_values_are_frozen_keyword_only_and_versioned() 
             (_feature("cue", "shared"),),
             limit=True,
         )
+
+
+def test_decode_boundary_rejects_poisoned_nested_values() -> None:
+    """Decoding runs every nested ``__post_init__``: the real trust boundary.
+
+    In-process revalidation of already-constructed frozen values was removed
+    (ADR-027); this pins the property that removal relies on, for both a
+    nested contract violation and a canonical-derivation violation.
+    """
+    record = _record(EpisodicRecorder(capacity=2), 0).records[0]
+    payload = encode_episodic_record(record)
+
+    poisoned = payload.replace(b'"confidence":0.9', b'"confidence":2.0', 1)
+    assert poisoned != payload
+    with pytest.raises(msgspec.ValidationError, match="confidence"):
+        msgspec.json.decode(poisoned, type=EpisodicRecord)
+
+    trace_id = record.trace.trace_id.encode()
+    retargeted = payload.replace(trace_id, trace_id + b"-forged")
+    assert retargeted != payload
+    with pytest.raises(msgspec.ValidationError, match="trace"):
+        msgspec.json.decode(retargeted, type=EpisodicRecord)
+
+
+def test_retrieval_limits_return_prefixes_of_the_same_canonical_order() -> None:
+    memory = EpisodicRecorder(capacity=8)
+    for tick, (cue, regime) in enumerate(
+        (
+            ("shared", "current"),
+            ("shared", "old"),
+            ("other", "current"),
+            ("shared", "current"),
+        )
+    ):
+        memory = memory.record(
+            episode_id=f"episode:{tick}",
+            tick=tick,
+            context=(_feature("cue", cue), _feature("regime", regime)),
+            **_loop_values(tick),
+        )
+    query = (_feature("cue", "shared"), _feature("regime", "current"))
+
+    widest = memory.retrieve(query, limit=4).matches
+    for limit in (1, 2, 3):
+        assert memory.retrieve(query, limit=limit).matches == widest[:limit]
+
+
+def test_full_capacity_memory_is_always_retrievable() -> None:
+    """Admission and retrieval bounds must compose (ADR-027).
+
+    Storage previously admitted records whose aggregate validation work made
+    every later query exceed the retrieval work limit. The construction cap is
+    now derived from the per-record admission bound, so any legitimately
+    filled memory stays queryable; the derivation is pinned alongside the
+    behavior.
+    """
+    assert episodic_module._MAX_CONSTRUCTION_WORK == (
+        episodic_module._MAX_RETRIEVAL_RESULTS
+        * episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES
+        * episodic_module._MAX_RECORD_WORK
+    )
+
+    memory = EpisodicRecorder(capacity=256)
+    for tick in range(256):
+        memory = _record(memory, tick)
+    retrieval = memory.retrieve(
+        (_feature("cue", "shared"), _feature("regime", "current")),
+        limit=3,
+    )
+    assert len(retrieval.matches) == 3
+    assert retrieval.unit_cost <= episodic_module._MAX_RETRIEVAL_WORK + (
+        episodic_module._MAX_CONSTRUCTION_WORK
+    )
