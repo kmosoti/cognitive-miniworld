@@ -142,6 +142,7 @@ def _validate_features(
     field: str,
     *,
     nonempty: bool,
+    canonical_names: bool = False,
 ) -> tuple[FeatureValue, ...]:
     features = cast(
         tuple[FeatureValue, ...],
@@ -155,9 +156,10 @@ def _validate_features(
     )
     for feature in features:
         _validate_feature(feature)
-    names = tuple(feature.name for feature in features)
-    if names != tuple(sorted(names)) or len(names) != len(set(names)):
-        raise ValueError(f"{field} must have sorted unique feature names")
+    if canonical_names:
+        names = tuple(feature.name for feature in features)
+        if names != tuple(sorted(names)) or len(names) != len(set(names)):
+            raise ValueError(f"{field} must have sorted unique feature names")
     return features
 
 
@@ -734,7 +736,12 @@ def _validated_inputs(
         outcomes=outcomes,
         error=error,
     )
-    validated_context = _validate_features(context, "context", nonempty=True)
+    validated_context = _validate_features(
+        context,
+        "context",
+        nonempty=True,
+        canonical_names=True,
+    )
     if len(validated_context) > _MAX_CONTEXT_FEATURES:
         raise ValueError(
             f"context must contain at most {_MAX_CONTEXT_FEATURES} features"
@@ -1129,6 +1136,7 @@ class EpisodicRetrieval(
             self.query_context,
             "query_context",
             nonempty=True,
+            canonical_names=True,
         )
         if len(query) > _MAX_CONTEXT_FEATURES:
             raise ValueError(
@@ -1330,7 +1338,12 @@ class EpisodicRecorder(
     ) -> EpisodicRetrieval:
         """Return positive matches with inspectable score contributions."""
 
-        query = _validate_features(context, "context", nonempty=True)
+        query = _validate_features(
+            context,
+            "context",
+            nonempty=True,
+            canonical_names=True,
+        )
         if len(query) > _MAX_CONTEXT_FEATURES:
             raise ValueError(
                 f"context must contain at most {_MAX_CONTEXT_FEATURES} features"

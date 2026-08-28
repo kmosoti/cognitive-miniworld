@@ -633,9 +633,6 @@ def _validate_proposal(proposal: ActionProposal) -> None:
     proposal.provenance.__post_init__()
     proposal.uncertainty.__post_init__()
     _validate_features(proposal.parameters, "proposal parameters")
-    names = tuple(proposal.observable_preconditions)
-    if names != tuple(sorted(names)) or len(names) != len(set(names)):
-        raise ValueError("proposal preconditions must be sorted and unique")
 
 
 def _validate_prediction(prediction: PredictionDistribution) -> None:

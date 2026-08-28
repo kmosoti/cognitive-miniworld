@@ -104,6 +104,7 @@ def _proposal(
     compute_units: int = 1,
     risk: float = 0.0,
     duration_ticks: int = 1,
+    observable_preconditions: tuple[str, ...] = (),
 ) -> ActionProposal:
     return ActionProposal(
         schema_version=CURRENT_SCHEMA_VERSION,
@@ -111,7 +112,7 @@ def _proposal(
         proposal_id=proposal_id,
         action=proposal_id,
         parameters=(),
-        observable_preconditions=(),
+        observable_preconditions=observable_preconditions,
         reversible=reversible,
         duration_ticks=duration_ticks,
         estimated_cost=ResourceCost(
@@ -314,6 +315,21 @@ def test_budget_gate_includes_public_action_duration() -> None:
     by_action = {item.action: item for item in result.values}
     assert by_action["long"].eligible is False
     assert result.decision.action == "short"
+
+
+def test_arbitration_accepts_contract_valid_precondition_order() -> None:
+    proposal = _proposal(
+        "wait",
+        reversible=True,
+        observable_preconditions=("resource_present", "energy_low"),
+    )
+
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+
+    assert result.decision.action == "wait"
 
 
 def test_resource_fraction_handles_unbounded_contract_integers() -> None:

@@ -298,6 +298,58 @@ def test_record_accepts_contract_valid_provenance_ordering() -> None:
     assert "z-source" in source_ids
 
 
+def test_record_preserves_contract_valid_nested_feature_order() -> None:
+    values = _loop_values(0)
+    belief = values["belief"]
+    hypothesis = msgspec.structs.replace(
+        belief.hypotheses[0],
+        features=(_feature("zeta", True), _feature("safe", True)),
+    )
+    values["belief"] = msgspec.structs.replace(
+        belief,
+        hypotheses=(hypothesis,),
+    )
+    proposal = values["proposals"][0]
+    values["proposals"] = (
+        msgspec.structs.replace(
+            proposal,
+            parameters=(_feature("zeta", 1), _feature("alpha", 2)),
+        ),
+    )
+    prediction = values["predictions"][0]
+    predicted_outcome = msgspec.structs.replace(
+        prediction.outcomes[0],
+        features=(_feature("zeta", 1.0), _feature("quality", 1.0)),
+    )
+    values["predictions"] = (
+        msgspec.structs.replace(prediction, outcomes=(predicted_outcome,)),
+    )
+    outcome = values["outcomes"][0]
+    values["outcomes"] = (
+        msgspec.structs.replace(
+            outcome,
+            values=(_feature("zeta", 1.0), _feature("quality", 1.0)),
+        ),
+    )
+
+    memory = EpisodicRecorder(capacity=2).record(
+        episode_id="feature-order",
+        tick=0,
+        context=(_feature("cue", "shared"),),
+        **values,
+    )
+
+    record = memory.records[0]
+    assert tuple(feature.name for feature in record.belief.hypotheses[0].features) == (
+        "zeta",
+        "safe",
+    )
+    assert tuple(feature.name for feature in record.proposals[0].parameters) == (
+        "zeta",
+        "alpha",
+    )
+
+
 def test_independent_record_rejects_trace_tick_outside_recorded_belief() -> None:
     record = _record(EpisodicRecorder(capacity=2), 7).records[0]
     incorrect_tick = record.trace.tick + 1
