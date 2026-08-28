@@ -348,12 +348,15 @@ class ErrorDisagreementEvaluationResult(
             raise TypeError(
                 "configuration must be an ErrorDisagreementEvaluationConfig"
             )
+        self.configuration.__post_init__()
         if type(self.evidence) is not tuple or any(
             type(record) is not ErrorDisagreementEvidence for record in self.evidence
         ):
             raise TypeError(
                 "evidence must contain only ErrorDisagreementEvidence values"
             )
+        for record in self.evidence:
+            record.__post_init__()
         if tuple(record.seed for record in self.evidence) != self.configuration.seeds:
             raise ValueError("evidence must exactly match configured seeds")
         expected_evidence = tuple(
@@ -879,10 +882,11 @@ def evaluate_error_disagreement_tier(
 def encode_error_disagreement_result(
     result: ErrorDisagreementEvaluationResult,
 ) -> bytes:
-    """Encode canonical public evidence after full frozen-trace validation."""
+    """Encode only after revalidating the complete evidence graph."""
 
     if type(result) is not ErrorDisagreementEvaluationResult:
         raise TypeError("result must be an ErrorDisagreementEvaluationResult")
+    result.__post_init__()
     return _ENCODER.encode(result)
 
 

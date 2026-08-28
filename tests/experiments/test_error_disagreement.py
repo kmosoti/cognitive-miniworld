@@ -133,6 +133,23 @@ def test_result_rejects_routing_swaps_even_when_aggregate_shape_is_valid() -> No
         msgspec.structs.replace(result, evidence=(swapped,))
 
 
+def test_encoder_revalidates_the_complete_disagreement_evidence_graph() -> None:
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result, "passed", False)
+    with pytest.raises(ValueError, match="preregistered disagreement gate"):
+        encode_error_disagreement_result(result)
+
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result.configuration, "primary_metric", "fabricated")
+    with pytest.raises(ValueError, match="credit-precision"):
+        encode_error_disagreement_result(result)
+
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result.evidence[0], "trace_sha256", "fabricated")
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        encode_error_disagreement_result(result)
+
+
 def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> None:
     for struct_type in (
         ErrorDisagreementEvaluationConfig,

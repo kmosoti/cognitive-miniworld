@@ -112,6 +112,23 @@ def test_result_recomputes_factorial_evidence_and_release_gate() -> None:
         msgspec.structs.replace(result, passed=False)
 
 
+def test_encoder_revalidates_the_complete_affordance_evidence_graph() -> None:
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(result, "passed", False)
+    with pytest.raises(ValueError, match="preregistered affordance gate"):
+        encode_affordance_result(result)
+
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(result.configuration, "primary_metric", "fabricated")
+    with pytest.raises(ValueError, match="feasible-action-recall"):
+        encode_affordance_result(result)
+
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(result.evidence[0], "trace_sha256", "fabricated")
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        encode_affordance_result(result)
+
+
 def test_configuration_cannot_relabel_or_shrink_the_confirmatory_gate() -> None:
     canonical = AffordanceCoverageEvaluationConfig.confirmatory()
     values = {

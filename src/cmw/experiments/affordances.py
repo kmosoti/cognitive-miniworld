@@ -275,6 +275,7 @@ class AffordanceCoverageEvaluationResult(
             raise TypeError(
                 "configuration must be an AffordanceCoverageEvaluationConfig"
             )
+        self.configuration.__post_init__()
         if type(self.evidence) is not tuple or any(
             type(record) is not AffordanceCoverageEvidence
             for record in self.evidence
@@ -282,6 +283,8 @@ class AffordanceCoverageEvaluationResult(
             raise TypeError(
                 "evidence must contain only AffordanceCoverageEvidence values"
             )
+        for record in self.evidence:
+            record.__post_init__()
         if tuple(record.seed for record in self.evidence) != self.configuration.seeds:
             raise ValueError("evidence must exactly match configured seeds")
         expected_evidence = tuple(
@@ -572,10 +575,11 @@ def evaluate_affordance_generator_tier(
 
 
 def encode_affordance_result(result: AffordanceCoverageEvaluationResult) -> bytes:
-    """Encode evidence deterministically for archival digesting."""
+    """Encode only after revalidating the complete evidence graph."""
 
     if type(result) is not AffordanceCoverageEvaluationResult:
         raise TypeError("result must be an AffordanceCoverageEvaluationResult")
+    result.__post_init__()
     return _ENCODER.encode(result)
 
 
