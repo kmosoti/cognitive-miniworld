@@ -441,6 +441,23 @@ def test_independent_result_recomputes_decision_confidence() -> None:
         _with_decision(result, decision)
 
 
+def test_independent_result_rejects_fabricated_uncertainty_bounds() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    uncertainty = msgspec.structs.replace(
+        result.decision.uncertainty,
+        lower_bound=0.0,
+        upper_bound=1.0,
+    )
+    decision = msgspec.structs.replace(result.decision, uncertainty=uncertainty)
+
+    with pytest.raises(ValueError, match="uncertainty bounds"):
+        _with_decision(result, decision)
+
+
 def test_independent_result_binds_decision_provenance() -> None:
     proposal = _proposal("wait", reversible=True)
     result = _arbitrate(

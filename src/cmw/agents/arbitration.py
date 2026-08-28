@@ -272,6 +272,11 @@ class ArbitrationResult:
             )
         if self.decision.uncertainty.entropy != _choice_entropy(selectable):
             raise ValueError("decision choice entropy must match the selectable values")
+        if (
+            self.decision.uncertainty.lower_bound is not None
+            or self.decision.uncertainty.upper_bound is not None
+        ):
+            raise ValueError("decision uncertainty bounds must both be None")
         if self.decision.provenance != Provenance(
             schema_version=CURRENT_SCHEMA_VERSION,
             source_event_ids=self.source_event_ids,
