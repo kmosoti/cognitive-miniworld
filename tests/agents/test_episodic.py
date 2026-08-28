@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import msgspec
 import pytest
@@ -291,6 +291,17 @@ def test_independent_record_rejects_trace_tick_outside_recorded_belief() -> None
         msgspec.structs.replace(record, trace=trace)
 
 
+def test_independent_record_bounds_trace_links_before_nested_validation() -> None:
+    record = _record(EpisodicRecorder(capacity=2), 7).records[0]
+    trace = msgspec.structs.replace(
+        record.trace,
+        reference_ids=(*record.trace.reference_ids, "reference:extra"),
+    )
+
+    with pytest.raises(ValueError, match=r"trace\.reference_ids.*exactly 1"):
+        msgspec.structs.replace(record, trace=trace)
+
+
 def test_retrieval_ranks_exact_current_context_and_explains_partial_history() -> None:
     memory = _record(EpisodicRecorder(capacity=4), 0, regime="old", action="wait")
     memory = _record(memory, 2, regime="current", action="adapt")
@@ -350,6 +361,25 @@ def test_retrieval_charges_complete_record_validation_work(
     monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", expected_work - 1)
     with pytest.raises(ValueError, match=r"retrieval.*work limit"):
         memory.retrieve(query)
+
+
+def test_match_rejects_evidence_length_before_scanning_entries() -> None:
+    memory = _record(EpisodicRecorder(capacity=2), 0)
+    match = memory.retrieve((_feature("cue", "shared"),)).matches[0]
+    oversized = cast(
+        tuple[FeatureMatchEvidence, ...],
+        (*match.evidence, object()),
+    )
+
+    with pytest.raises(ValueError, match="evidence length"):
+        EpisodicMatch(
+            schema_version=match.schema_version,
+            record=match.record,
+            score=match.score,
+            exact_match_count=match.exact_match_count,
+            comparison_count=match.comparison_count,
+            evidence=oversized,
+        )
 
 
 def test_retrieval_does_not_collapse_type_equivalent_scalar_context() -> None:

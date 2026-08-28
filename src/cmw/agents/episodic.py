@@ -13,7 +13,6 @@ from cmw.contracts import (
     ActionDecision,
     ActionProposal,
     BeliefState,
-    EligibilityEntry,
     ErrorBundle,
     ExperienceTrace,
     FeatureValue,
@@ -474,6 +473,10 @@ def _record_work(
         + sum(len(outcome.values) for outcome in outcomes)
         + 1
         + source_event_count
+        + len(references)
+        + len(proposals)
+        + len(predictions)
+        + len(outcomes)
     )
     if work > _MAX_RECORD_WORK:
         raise ValueError("episode exceeds the deterministic record-work limit")
@@ -503,6 +506,15 @@ def _provenance_shape(value: object, field: str) -> Provenance:
     if len(value.source_event_ids) > _MAX_SOURCE_EVENT_IDS:
         raise ValueError(f"{field} exceeds the source-event limit")
     return value
+
+
+def _trace_link_shape(value: object, field: str, expected_length: int) -> None:
+    if type(value) is not tuple:
+        raise TypeError(f"{field} must be a tuple")
+    if len(value) != expected_length:
+        raise ValueError(
+            f"{field} must contain exactly {expected_length} values"
+        )
 
 
 def _preflight_inputs(
@@ -887,17 +899,30 @@ class EpisodicRecord(
             source_ids,
             expected_work,
         ) = values
-        for entry in self.trace.eligibility:
-            if type(entry) is not EligibilityEntry:
-                raise TypeError(
-                    "trace.eligibility must contain EligibilityEntry values"
-                )
-            entry.__post_init__()
+        _trace_link_shape(
+            self.trace.reference_ids,
+            "trace.reference_ids",
+            len(references),
+        )
+        _trace_link_shape(
+            self.trace.proposal_ids,
+            "trace.proposal_ids",
+            len(proposals),
+        )
+        _trace_link_shape(
+            self.trace.prediction_ids,
+            "trace.prediction_ids",
+            len(predictions),
+        )
+        _trace_link_shape(
+            self.trace.outcome_event_ids,
+            "trace.outcome_event_ids",
+            len(outcomes),
+        )
+        _trace_link_shape(self.trace.eligibility, "trace.eligibility", 0)
         _validate_provenance(self.trace.provenance, "trace.provenance")
         _validate_uncertainty(self.trace.uncertainty, "trace.uncertainty")
         self.trace.__post_init__()
-        if self.trace.eligibility:
-            raise ValueError("episodic recording must defer eligibility to MW-041")
         if self.unit_cost != expected_work or self.trace.unit_cost != expected_work:
             raise ValueError("unit_cost must be recomputed from bounded record work")
         if self.trace.trace_id != (
@@ -1063,14 +1088,14 @@ class EpisodicMatch(
             "comparison_count",
             _MAX_CONTEXT_FEATURES * 2,
         )
-        if type(self.evidence) is not tuple or any(
-            type(item) is not FeatureMatchEvidence for item in self.evidence
-        ):
+        if type(self.evidence) is not tuple:
+            raise TypeError("evidence must contain FeatureMatchEvidence values")
+        if len(self.evidence) != self.comparison_count:
+            raise ValueError("evidence length must equal comparison_count")
+        if any(type(item) is not FeatureMatchEvidence for item in self.evidence):
             raise TypeError("evidence must contain FeatureMatchEvidence values")
         for item in self.evidence:
             item.__post_init__()
-        if len(self.evidence) != self.comparison_count:
-            raise ValueError("comparison_count must equal the evidence length")
         names = tuple(item.feature_name for item in self.evidence)
         if names != tuple(sorted(names)) or len(names) != len(set(names)):
             raise ValueError("match evidence must have sorted unique feature names")
