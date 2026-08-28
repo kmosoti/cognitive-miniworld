@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
@@ -314,6 +315,75 @@ def test_each_error_channel_has_an_independent_nonzero_path() -> None:
                 assert value is False
             else:
                 assert value == 0.0
+
+
+def test_effective_tick_rejects_negative_observation_latency() -> None:
+    invalid = cast(
+        ObservationEnvelope,
+        SimpleNamespace(tick=1, latency_ticks=-1),
+    )
+
+    with pytest.raises(ValueError, match=r"latency must be >= 0"):
+        error_module._effective_tick(invalid)
+
+
+def test_agency_uses_latest_effective_efference_copy() -> None:
+    before = _belief(50.0, 0, "effective-agency-before")
+    after = _belief(50.0, 11, "effective-agency-after")
+    observations = (
+        ObservationEnvelope(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            unit_cost=0,
+            event_id="observation:integrity",
+            tick=11,
+            modality="interoceptive",
+            latency_ticks=0,
+            reliability=1.0,
+            values=(_feature("integrity", 50.0),),
+            provenance=_provenance("observation-source"),
+            uncertainty=_uncertainty(),
+        ),
+        ObservationEnvelope(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            unit_cost=0,
+            event_id="observation:efference-late-receipt",
+            tick=11,
+            modality="efference_copy",
+            latency_ticks=5,
+            reliability=1.0,
+            values=(
+                _feature("attempted_action", "move"),
+                _feature("executed_action", "wait"),
+            ),
+            provenance=_provenance("efference-late-receipt-source"),
+            uncertainty=_uncertainty(),
+        ),
+        ObservationEnvelope(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            unit_cost=0,
+            event_id="observation:efference-latest-effective",
+            tick=10,
+            modality="efference_copy",
+            latency_ticks=0,
+            reliability=1.0,
+            values=(
+                _feature("attempted_action", "wait"),
+                _feature("executed_action", "wait"),
+            ),
+            provenance=_provenance("efference-latest-effective-source"),
+            uncertainty=_uncertainty(),
+        ),
+    )
+
+    bundle = TypedErrorDecomposer().decompose(
+        _prediction(50.0, before, 11),
+        before,
+        after,
+        _reference(50.0, 11),
+        observations,
+    )
+
+    assert bundle.agency is False
 
 
 def test_expected_undesirable_and_unexpected_safe_route_differently() -> None:

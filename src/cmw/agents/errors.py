@@ -131,9 +131,7 @@ def _observed_values(
 ) -> tuple[dict[str, float], dict[str, int]]:
     selected: dict[str, tuple[int, int, str, int, float]] = {}
     for observation in observations:
-        effective_tick = observation.tick - observation.latency_ticks
-        if effective_tick < 0:
-            raise ValueError("observation latency must not precede tick zero")
+        effective_tick = _effective_tick(observation)
         features = _feature_values(
             observation.values,
             f"observation {observation.event_id!r}",
@@ -165,6 +163,15 @@ def _observed_values(
     )
 
 
+def _effective_tick(observation: ObservationEnvelope) -> int:
+    if observation.latency_ticks < 0:
+        raise ValueError("observation latency must be >= 0")
+    effective_tick = observation.tick - observation.latency_ticks
+    if effective_tick < 0:
+        raise ValueError("observation latency must not precede tick zero")
+    return effective_tick
+
+
 def _agency_error(observations: tuple[ObservationEnvelope, ...]) -> bool:
     efference = tuple(
         observation
@@ -173,7 +180,10 @@ def _agency_error(observations: tuple[ObservationEnvelope, ...]) -> bool:
     )
     if not efference:
         raise ValueError("observations must include an efference_copy channel")
-    latest = max(efference, key=lambda item: (item.tick, item.event_id))
+    latest = max(
+        efference,
+        key=lambda item: (_effective_tick(item), item.tick, item.event_id),
+    )
     features = _feature_values(latest.values, "efference_copy")
     required = ("attempted_action", "executed_action")
     if any(name not in features for name in required):
