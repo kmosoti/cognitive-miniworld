@@ -276,6 +276,28 @@ def test_record_preserves_the_complete_typed_loop_and_canonical_provenance() -> 
     assert encode_episodic_record(record) == encode_episodic_record(record)
 
 
+def test_record_accepts_contract_valid_provenance_ordering() -> None:
+    values = _loop_values(0)
+    belief = values["belief"]
+    provenance = msgspec.structs.replace(
+        belief.provenance,
+        source_event_ids=("z-source", "a-source"),
+    )
+    values["belief"] = msgspec.structs.replace(belief, provenance=provenance)
+
+    memory = EpisodicRecorder(capacity=2).record(
+        episode_id="ordered-provenance",
+        tick=0,
+        context=(_feature("cue", "shared"),),
+        **values,
+    )
+
+    source_ids = memory.records[0].trace.provenance.source_event_ids
+    assert source_ids == tuple(sorted(source_ids))
+    assert "a-source" in source_ids
+    assert "z-source" in source_ids
+
+
 def test_independent_record_rejects_trace_tick_outside_recorded_belief() -> None:
     record = _record(EpisodicRecorder(capacity=2), 7).records[0]
     incorrect_tick = record.trace.tick + 1
@@ -380,6 +402,18 @@ def test_match_rejects_evidence_length_before_scanning_entries() -> None:
             comparison_count=match.comparison_count,
             evidence=oversized,
         )
+
+
+def test_independent_retrieval_charges_aggregate_record_validation() -> None:
+    memory = _record(EpisodicRecorder(capacity=4), 1)
+    memory = _record(memory, 3)
+    retrieval = memory.retrieve(
+        (_feature("cue", "shared"), _feature("regime", "current"))
+    )
+    comparison_only = sum(match.comparison_count for match in retrieval.matches)
+
+    with pytest.raises(ValueError, match="aggregate record validation"):
+        msgspec.structs.replace(retrieval, unit_cost=comparison_only)
 
 
 def test_retrieval_does_not_collapse_type_equivalent_scalar_context() -> None:

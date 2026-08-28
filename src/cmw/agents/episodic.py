@@ -168,8 +168,6 @@ def _validate_provenance(value: object, field: str) -> Provenance:
     if len(provenance.source_event_ids) > _MAX_SOURCE_EVENT_IDS:
         raise ValueError(f"{field} exceeds the source-event limit")
     provenance.__post_init__()
-    if provenance.source_event_ids != tuple(sorted(provenance.source_event_ids)):
-        raise ValueError(f"{field}.source_event_ids must be sorted")
     return provenance
 
 
@@ -1145,6 +1143,14 @@ class EpisodicRetrieval(
             )
         if any(type(item) is not EpisodicMatch for item in self.matches):
             raise TypeError("matches must contain only EpisodicMatch values")
+        minimum_work = _retrieval_work(
+            tuple(item.record for item in self.matches),
+            query,
+        )
+        if self.unit_cost < minimum_work:
+            raise ValueError(
+                "unit_cost must cover aggregate record validation work"
+            )
         for item in self.matches:
             item.__post_init__()
             expected_evidence, exact, compared, score = _match_evidence(
