@@ -154,6 +154,8 @@ class ArbitrationResult:
     """Selected decision plus the complete, proposal-sorted score table."""
 
     weights: ArbitrationWeights
+    source_confidence: float
+    source_event_ids: tuple[str, ...]
     decision: ActionDecision
     values: tuple[ActionValue, ...]
 
@@ -161,6 +163,20 @@ class ArbitrationResult:
         if type(self.weights) is not ArbitrationWeights:
             raise TypeError("weights must be ArbitrationWeights")
         self.weights.__post_init__()
+        source_confidence = _finite(self.source_confidence, "source_confidence")
+        if not 0.0 <= source_confidence <= 1.0:
+            raise ValueError("source_confidence must be within [0.0, 1.0]")
+        if type(self.source_event_ids) is not tuple:
+            raise TypeError("source_event_ids must be a tuple")
+        if len(self.source_event_ids) > _MAX_SOURCE_EVENT_IDS:
+            raise ValueError("source_event_ids exceed the arbitration limit")
+        if any(
+            type(event_id) is not str or not event_id
+            for event_id in self.source_event_ids
+        ):
+            raise ValueError("source_event_ids must contain non-empty strings")
+        if self.source_event_ids != tuple(sorted(set(self.source_event_ids))):
+            raise ValueError("source_event_ids must be sorted and unique")
         if type(self.decision) is not ActionDecision:
             raise TypeError("decision must be an ActionDecision")
         self.decision.__post_init__()
@@ -208,8 +224,23 @@ class ArbitrationResult:
         )
         if selected_value != min(selectable, key=_selection_key):
             raise ValueError("decision must select the canonical winning value")
+        if self.decision.uncertainty.confidence != _decision_confidence(
+            selectable,
+            selected_value,
+            source_confidence,
+        ):
+            raise ValueError(
+                "decision confidence must match source confidence and winning margin"
+            )
         if self.decision.uncertainty.entropy != _choice_entropy(selectable):
             raise ValueError("decision choice entropy must match the selectable values")
+        if self.decision.provenance != Provenance(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            source_event_ids=self.source_event_ids,
+            producer=_PRODUCER,
+            producer_version=__version__,
+        ):
+            raise ValueError("decision provenance must match the arbitration inputs")
         if self.decision.action != selected_value.action:
             raise ValueError("decision action must match the selected value")
         expected_rationale = (
@@ -366,15 +397,18 @@ class ActionArbitrator:
         selected = min(selectable, key=_selection_key)
         selected_proposal = proposals_by_id[selected.proposal_id]
         selected_prediction = prepared.predictions[selected.proposal_id]
+        source_confidence = min(
+            belief.uncertainty.confidence,
+            reference.uncertainty.confidence,
+            error.uncertainty.confidence,
+            budget.uncertainty.confidence,
+            selected_proposal.uncertainty.confidence,
+            selected_prediction.uncertainty.confidence,
+        )
         confidence, entropy = _decision_uncertainty(
             selectable,
             selected,
-            belief,
-            reference,
-            error,
-            budget,
-            selected_proposal,
-            selected_prediction,
+            source_confidence,
         )
         decision = ActionDecision(
             schema_version=CURRENT_SCHEMA_VERSION,
@@ -415,6 +449,8 @@ class ActionArbitrator:
         )
         return ArbitrationResult(
             weights=self.weights,
+            source_confidence=source_confidence,
+            source_event_ids=prepared.source_event_ids,
             decision=decision,
             values=values,
         )
@@ -832,34 +868,29 @@ def _with_dominance(
     )
 
 
-def _decision_uncertainty(
+def _decision_confidence(
     selectable: tuple[ActionValue, ...],
     selected: ActionValue,
-    belief: BeliefState,
-    reference: ReferenceTrajectory,
-    error: ErrorBundle,
-    budget: ResourceBudget,
-    proposal: ActionProposal,
-    prediction: PredictionDistribution,
-) -> tuple[float, float]:
-    source_confidence = min(
-        belief.uncertainty.confidence,
-        reference.uncertainty.confidence,
-        error.uncertainty.confidence,
-        budget.uncertainty.confidence,
-        proposal.uncertainty.confidence,
-        prediction.uncertainty.confidence,
-    )
+    source_confidence: float,
+) -> float:
     if len(selectable) == 1:
-        return source_confidence, 0.0
+        return source_confidence
     ordered = sorted(
         (value.total_value for value in selectable),
         reverse=True,
     )
     margin = max(0.0, selected.total_value - ordered[1])
     margin_confidence = margin / (1.0 + margin)
+    return _canonical(source_confidence * margin_confidence)
+
+
+def _decision_uncertainty(
+    selectable: tuple[ActionValue, ...],
+    selected: ActionValue,
+    source_confidence: float,
+) -> tuple[float, float]:
     return (
-        _canonical(source_confidence * margin_confidence),
+        _decision_confidence(selectable, selected, source_confidence),
         _choice_entropy(selectable),
     )
 

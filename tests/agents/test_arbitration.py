@@ -393,6 +393,51 @@ def test_independent_result_recomputes_choice_entropy() -> None:
     with pytest.raises(ValueError, match="choice entropy"):
         ArbitrationResult(
             weights=result.weights,
+            source_confidence=result.source_confidence,
+            source_event_ids=result.source_event_ids,
+            decision=decision,
+            values=result.values,
+        )
+
+
+def test_independent_result_recomputes_decision_confidence() -> None:
+    candidates = tuple(
+        _proposal(action, reversible=True) for action in ("alpha", "beta")
+    )
+    predictions = tuple(
+        _prediction(candidate, (("safe", 1.0, True),)) for candidate in candidates
+    )
+    result = _arbitrate(candidates, predictions)
+    uncertainty = msgspec.structs.replace(result.decision.uncertainty, confidence=0.5)
+    decision = msgspec.structs.replace(result.decision, uncertainty=uncertainty)
+
+    with pytest.raises(ValueError, match="decision confidence"):
+        ArbitrationResult(
+            weights=result.weights,
+            source_confidence=result.source_confidence,
+            source_event_ids=result.source_event_ids,
+            decision=decision,
+            values=result.values,
+        )
+
+
+def test_independent_result_binds_decision_provenance() -> None:
+    proposal = _proposal("wait", reversible=True)
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+    )
+    provenance = msgspec.structs.replace(
+        result.decision.provenance,
+        source_event_ids=("unrelated",),
+    )
+    decision = msgspec.structs.replace(result.decision, provenance=provenance)
+
+    with pytest.raises(ValueError, match="decision provenance"):
+        ArbitrationResult(
+            weights=result.weights,
+            source_confidence=result.source_confidence,
+            source_event_ids=result.source_event_ids,
             decision=decision,
             values=result.values,
         )
@@ -488,6 +533,8 @@ def test_independent_result_must_select_the_canonical_winner() -> None:
     with pytest.raises(ValueError, match="canonical winning value"):
         ArbitrationResult(
             weights=result.weights,
+            source_confidence=result.source_confidence,
+            source_event_ids=result.source_event_ids,
             decision=worse_only.decision,
             values=result.values,
         )
