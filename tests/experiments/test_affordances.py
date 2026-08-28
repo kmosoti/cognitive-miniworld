@@ -8,6 +8,7 @@ from typing import cast
 import msgspec
 import pytest
 
+import cmw.experiments.affordances as affordance_experiment_module
 from cmw.experiments.affordances import (
     CONFIRMATORY_MODE,
     CONFIRMATORY_TIER,
@@ -219,3 +220,23 @@ def test_evaluator_accepts_only_the_frozen_configuration_boundary() -> None:
         evaluate_affordance_generator(
             cast(AffordanceCoverageEvaluationConfig, None)
         )
+
+
+def test_evaluator_revalidates_configuration_before_seed_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configuration = AffordanceCoverageEvaluationConfig.for_tier("unit")
+    object.__setattr__(configuration, "seeds", (*configuration.seeds, 999_999))
+
+    def unexpected_seed(seed: int) -> object:
+        del seed
+        raise AssertionError("configuration rejection happened after seed work")
+
+    monkeypatch.setattr(
+        affordance_experiment_module,
+        "_evaluate_seed",
+        unexpected_seed,
+    )
+
+    with pytest.raises(ValueError, match="selected tier"):
+        evaluate_affordance_generator(configuration)

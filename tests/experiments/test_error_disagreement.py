@@ -8,6 +8,7 @@ from typing import cast
 import msgspec
 import pytest
 
+import cmw.experiments.error_disagreement as disagreement_experiment_module
 from cmw.experiments.error_disagreement import (
     CONTROL_SAFETY_GATE,
     FIXTURE_STREAM_NAME,
@@ -210,3 +211,23 @@ def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> 
         evaluate_error_disagreement(cast(ErrorDisagreementEvaluationConfig, None))
     with pytest.raises(ValueError, match="benchmark"):
         ErrorDisagreementEvaluationConfig.for_tier("benchmark")
+
+
+def test_evaluator_revalidates_configuration_before_seed_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    configuration = ErrorDisagreementEvaluationConfig.for_tier("unit")
+    object.__setattr__(configuration, "seeds", (*configuration.seeds, 999_999))
+
+    def unexpected_seed(seed: int) -> object:
+        del seed
+        raise AssertionError("configuration rejection happened after seed work")
+
+    monkeypatch.setattr(
+        disagreement_experiment_module,
+        "_evaluate_seed",
+        unexpected_seed,
+    )
+
+    with pytest.raises(ValueError, match="selected tier"):
+        evaluate_error_disagreement(configuration)

@@ -867,6 +867,7 @@ def evaluate_error_disagreement(
 
     if type(configuration) is not ErrorDisagreementEvaluationConfig:
         raise TypeError("configuration must be an ErrorDisagreementEvaluationConfig")
+    configuration.__post_init__()
     evidence = tuple(_evaluate_seed(seed) for seed in configuration.seeds)
     typed_precision = _mean(record.typed_credit_precision for record in evidence)
     scalar_precision = _mean(record.scalar_credit_precision for record in evidence)

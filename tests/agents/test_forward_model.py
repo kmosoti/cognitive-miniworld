@@ -261,6 +261,86 @@ def test_known_model_enforces_the_adr_022_action_bound() -> None:
         )
 
 
+def test_forward_model_rejects_projection_work_before_state_scan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _known("flip", flip=True)
+
+    def unexpected_enumerate(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("projection rejection happened after the state scan")
+
+    monkeypatch.setattr(forward_model_module, "_MAX_BELIEF_PROJECTION_WORK", 3)
+    monkeypatch.setattr(
+        forward_model_module,
+        "enumerate",
+        unexpected_enumerate,
+        raising=False,
+    )
+
+    with pytest.raises(ValueError, match="deterministic work limit"):
+        model.predict(_belief(0.5, 0, "bounded"), proposal("flip", "bounded"))
+
+
+def test_forward_model_caps_projection_payload_dimensions() -> None:
+    oversized_features = tuple(
+        FeatureValue(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            name=f"feature-{index:02d}",
+            value=True,
+            unit=None,
+        )
+        for index in range(65)
+    )
+    with pytest.raises(ValueError, match="at most 64"):
+        TabularPredictionState(
+            state_id="oversized",
+            features=oversized_features,
+        )
+
+    canonical = _belief(0.5, 0, "canonical")
+    too_many_hypotheses = BeliefState(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        unit_cost=0,
+        belief_id="belief:too-many",
+        revision_tick=0,
+        hypotheses=tuple(
+            StateHypothesis(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                state_id=f"hypothesis-{index:03d}",
+                probability=1.0 / 257.0,
+                features=STATES[index % len(STATES)].features,
+            )
+            for index in range(257)
+        ),
+        provenance=canonical.provenance,
+        uncertainty=canonical.uncertainty,
+    )
+    model = _known("flip", flip=True)
+    selected = proposal("flip", "bounded")
+    with pytest.raises(ValueError, match="at most 256 hypotheses"):
+        model.predict(too_many_hypotheses, selected)
+
+    feature_heavy = BeliefState(
+        schema_version=CURRENT_SCHEMA_VERSION,
+        unit_cost=0,
+        belief_id="belief:feature-heavy",
+        revision_tick=0,
+        hypotheses=(
+            StateHypothesis(
+                schema_version=CURRENT_SCHEMA_VERSION,
+                state_id="feature-heavy",
+                probability=1.0,
+                features=oversized_features,
+            ),
+        ),
+        provenance=canonical.provenance,
+        uncertainty=canonical.uncertainty,
+    )
+    with pytest.raises(ValueError, match="at most 64 features"):
+        model.predict(feature_heavy, selected)
+
+
 def test_forward_model_rejects_provenance_before_union(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -269,16 +349,15 @@ def test_forward_model_rejects_provenance_before_union(
     after = _belief(0.0, 1, "after")
     selected = proposal("flip", "proposal:flip")
 
-    def unexpected_sorted(*args: object, **kwargs: object) -> object:
+    def unexpected_source_union(*args: object, **kwargs: object) -> object:
         del args, kwargs
         raise AssertionError("provenance rejection happened after the union")
 
     monkeypatch.setattr(forward_model_module, "_MAX_SOURCE_EVENT_IDS", 0)
     monkeypatch.setattr(
         forward_model_module,
-        "sorted",
-        unexpected_sorted,
-        raising=False,
+        "_source_event_id_union",
+        unexpected_source_union,
     )
 
     with pytest.raises(ValueError, match="source-event limit"):

@@ -20,7 +20,9 @@ from cmw.contracts import (
 _PRODUCER: Final = "cmw.agents.belief-affordance-generator"
 _MAX_TEMPLATES: Final = 64
 _MAX_PRECONDITIONS: Final = 16
+_MAX_PARAMETERS: Final = 64
 _MAX_HYPOTHESES: Final = 256
+_MAX_SOURCE_EVENT_IDS: Final = 10_000
 _MAX_WORK: Final = _MAX_TEMPLATES * _MAX_PRECONDITIONS * _MAX_HYPOTHESES
 
 
@@ -58,7 +60,13 @@ class AffordanceTemplate:
         _text(self.action, "action")
         if type(self.estimated_cost) is not ResourceCost:
             raise TypeError("estimated_cost must be a ResourceCost")
-        if type(self.parameters) is not tuple or any(
+        if type(self.parameters) is not tuple:
+            raise TypeError("parameters must be a tuple")
+        if len(self.parameters) > _MAX_PARAMETERS:
+            raise ValueError(
+                f"parameters must contain at most {_MAX_PARAMETERS} values"
+            )
+        if any(
             type(parameter) is not FeatureValue for parameter in self.parameters
         ):
             raise TypeError("parameters must contain only FeatureValue values")
@@ -94,7 +102,13 @@ class AffordanceGeneration:
 
     def __post_init__(self) -> None:
         _text(self.belief_id, "belief_id")
-        if type(self.proposals) is not tuple or any(
+        if type(self.proposals) is not tuple:
+            raise TypeError("proposals must be a tuple")
+        if len(self.proposals) > _MAX_TEMPLATES:
+            raise ValueError(
+                f"proposals must contain at most {_MAX_TEMPLATES} values"
+            )
+        if any(
             type(proposal) is not ActionProposal for proposal in self.proposals
         ):
             raise TypeError("proposals must contain only ActionProposal values")
@@ -103,6 +117,13 @@ class AffordanceGeneration:
             set(proposal_ids)
         ):
             raise ValueError("proposals must have sorted unique IDs")
+        if type(self.rejected_template_ids) is not tuple:
+            raise TypeError("rejected_template_ids must be a tuple")
+        if len(self.rejected_template_ids) > _MAX_TEMPLATES:
+            raise ValueError(
+                "rejected_template_ids must contain at most "
+                f"{_MAX_TEMPLATES} values"
+            )
         _text_tuple(self.rejected_template_ids, "rejected_template_ids")
 
     @property
@@ -150,6 +171,7 @@ def observe_affordance_cycle(
 
     if type(generation) is not AffordanceGeneration:
         raise TypeError("generation must be an AffordanceGeneration")
+    generation.__post_init__()
     proposal_ids = tuple(proposal.proposal_id for proposal in generation.proposals)
     return AffordanceCycleObservation(
         proposal_ids=proposal_ids,
@@ -213,6 +235,8 @@ class BeliefAffordanceGenerator:
             )
         if any(type(template) is not AffordanceTemplate for template in self.templates):
             raise TypeError("templates must contain only AffordanceTemplate values")
+        for template in self.templates:
+            template.__post_init__()
         identifiers = tuple(template.template_id for template in self.templates)
         if identifiers != tuple(sorted(identifiers)) or len(identifiers) != len(
             set(identifiers)
@@ -224,9 +248,15 @@ class BeliefAffordanceGenerator:
 
         if type(belief) is not BeliefState:
             raise TypeError("belief must be a BeliefState")
+        self.__post_init__()
         if len(belief.hypotheses) > _MAX_HYPOTHESES:
             raise ValueError(
                 f"belief must contain at most {_MAX_HYPOTHESES} hypotheses"
+            )
+        source_event_ids = belief.provenance.source_event_ids
+        if len(source_event_ids) > _MAX_SOURCE_EVENT_IDS:
+            raise ValueError(
+                "belief provenance exceeds the affordance source-event limit"
             )
         feature_scan_work = len(self.templates) * sum(
             len(hypothesis.features) for hypothesis in belief.hypotheses
@@ -235,7 +265,14 @@ class BeliefAffordanceGenerator:
             len(belief.hypotheses) * max(1, len(template.observable_preconditions))
             for template in self.templates
         )
-        work = feature_scan_work + precondition_work
+        parameter_work = sum(len(template.parameters) for template in self.templates)
+        provenance_work = len(self.templates) * len(source_event_ids)
+        work = (
+            feature_scan_work
+            + precondition_work
+            + parameter_work
+            + provenance_work
+        )
         if work > _MAX_WORK:
             raise ValueError(
                 "affordance generation exceeds its deterministic work limit"
@@ -272,7 +309,7 @@ class BeliefAffordanceGenerator:
                     estimated_cost=template.estimated_cost,
                     provenance=Provenance(
                         schema_version=CURRENT_SCHEMA_VERSION,
-                        source_event_ids=belief.provenance.source_event_ids,
+                        source_event_ids=source_event_ids,
                         producer=_PRODUCER,
                         producer_version=__version__,
                     ),

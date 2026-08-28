@@ -551,6 +551,7 @@ def evaluate_affordance_generator(
         raise TypeError(
             "configuration must be an AffordanceCoverageEvaluationConfig"
         )
+    configuration.__post_init__()
     evidence = tuple(_evaluate_seed(seed) for seed in configuration.seeds)
     generation_failure, selection_failure = _failure_observations()
     candidate_recall = _mean(

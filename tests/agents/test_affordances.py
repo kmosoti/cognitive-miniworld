@@ -242,6 +242,63 @@ def test_generation_counts_belief_feature_scans_before_support(
         generator.generate(belief)
 
 
+def test_generation_bounds_and_counts_template_parameters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parameters = tuple(
+        FeatureValue(
+            schema_version=CURRENT_SCHEMA_VERSION,
+            name=f"parameter-{index:02d}",
+            value=index,
+            unit=None,
+        )
+        for index in range(65)
+    )
+    with pytest.raises(ValueError, match="at most 64"):
+        AffordanceTemplate(
+            template_id="oversized",
+            action="wait",
+            estimated_cost=_cost(),
+            parameters=parameters,
+        )
+
+    template = AffordanceTemplate(
+        template_id="parameterized",
+        action="wait",
+        estimated_cost=_cost(),
+        parameters=parameters[:1],
+    )
+    generator = BeliefAffordanceGenerator(templates=(template,))
+
+    def unexpected_proposal(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("work rejection happened after proposal construction")
+
+    monkeypatch.setattr(affordance_module, "_MAX_WORK", 1)
+    monkeypatch.setattr(affordance_module, "ActionProposal", unexpected_proposal)
+
+    with pytest.raises(ValueError, match="deterministic work limit"):
+        generator.generate(_belief(_hypothesis("unknown", 1.0, ())))
+
+
+def test_generation_rejects_provenance_before_proposal_copy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    generator = BeliefAffordanceGenerator(
+        templates=(_template("wait", "wait"),)
+    )
+
+    def unexpected_provenance(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("provenance rejection happened after proposal copying")
+
+    monkeypatch.setattr(affordance_module, "_MAX_SOURCE_EVENT_IDS", 0)
+    monkeypatch.setattr(affordance_module, "Provenance", unexpected_provenance)
+
+    with pytest.raises(ValueError, match="source-event limit"):
+        generator.generate(_belief(_hypothesis("unknown", 1.0, ())))
+
+
 def test_configuration_requires_canonical_unique_template_ids() -> None:
     consume = _template("consume", "consume", "resource_present")
 

@@ -22,6 +22,11 @@ _KNOWN_PRODUCER: Final = "cmw.agents.known-tabular-forward-model"
 _LEARNED_PRODUCER: Final = "cmw.agents.learned-tabular-forward-model"
 _MAX_STATES: Final = 64
 _MAX_ACTIONS: Final = 16
+_MAX_STATE_FEATURES: Final = 64
+_MAX_BELIEF_HYPOTHESES: Final = 256
+_MAX_HYPOTHESIS_FEATURES: Final = _MAX_STATE_FEATURES
+_MAX_BELIEF_PROJECTION_WORK: Final = 262_144
+_MAX_TABLE_ITEMS: Final = _MAX_ACTIONS * _MAX_STATES * _MAX_STATES
 _MAX_HORIZON_TICKS: Final = 10_000
 _MAX_SOURCE_EVENT_IDS: Final = _MAX_HORIZON_TICKS
 
@@ -55,6 +60,10 @@ def _bounded_source_event_ids(
 ) -> tuple[str, ...]:
     if sum(len(group) for group in groups) > _MAX_SOURCE_EVENT_IDS:
         raise ValueError("forward-model provenance exceeds its source-event limit")
+    return _source_event_id_union(groups)
+
+
+def _source_event_id_union(groups: tuple[tuple[str, ...], ...]) -> tuple[str, ...]:
     return tuple(sorted({event_id for group in groups for event_id in group}))
 
 
@@ -73,6 +82,10 @@ def _features(
     if type(value) is not tuple or not value:
         raise TypeError(f"{field} must be a non-empty tuple")
     features = cast(tuple[FeatureValue, ...], value)
+    if len(features) > _MAX_STATE_FEATURES:
+        raise ValueError(
+            f"{field} must contain at most {_MAX_STATE_FEATURES} values"
+        )
     if any(type(feature) is not FeatureValue for feature in features):
         raise TypeError(f"{field} must contain only FeatureValue values")
     names = tuple(feature.name for feature in features)
@@ -136,6 +149,8 @@ def _validated_states(
     states = cast(tuple[TabularPredictionState, ...], value)
     if any(type(state) is not TabularPredictionState for state in states):
         raise TypeError("states must contain only TabularPredictionState values")
+    for state in states:
+        state.__post_init__()
     identifiers = tuple(state.state_id for state in states)
     if identifiers != tuple(sorted(identifiers)) or len(identifiers) != len(
         set(identifiers)
@@ -181,11 +196,30 @@ def _transition_keys(
 def _belief_probabilities(
     belief: BeliefState,
     states: tuple[TabularPredictionState, ...],
-) -> tuple[float, ...]:
+) -> tuple[tuple[float, ...], int]:
     if type(belief) is not BeliefState:
         raise TypeError("belief must be a BeliefState")
+    hypotheses = belief.hypotheses
+    if len(hypotheses) > _MAX_BELIEF_HYPOTHESES:
+        raise ValueError(
+            f"belief must contain at most {_MAX_BELIEF_HYPOTHESES} hypotheses"
+        )
+    feature_counts = tuple(len(hypothesis.features) for hypothesis in hypotheses)
+    if any(count > _MAX_HYPOTHESIS_FEATURES for count in feature_counts):
+        raise ValueError(
+            "belief hypotheses must contain at most "
+            f"{_MAX_HYPOTHESIS_FEATURES} features"
+        )
+    state_feature_count = max(len(state.features) for state in states)
+    projection_work = len(states) * sum(
+        max(1, state_feature_count, count) for count in feature_counts
+    )
+    if projection_work > _MAX_BELIEF_PROJECTION_WORK:
+        raise ValueError(
+            "belief projection exceeds its deterministic work limit"
+        )
     probabilities = [0.0] * len(states)
-    for hypothesis in belief.hypotheses:
+    for hypothesis in hypotheses:
         matches = tuple(
             index
             for index, state in enumerate(states)
@@ -201,7 +235,7 @@ def _belief_probabilities(
         raise ValueError("belief probabilities must sum to 1.0")
     largest = max(range(len(probabilities)), key=probabilities.__getitem__)
     probabilities[largest] += 1.0 - math.fsum(probabilities)
-    return tuple(probabilities)
+    return tuple(probabilities), projection_work
 
 
 def _normalized_outcomes(
@@ -241,7 +275,7 @@ def _prediction(
 ) -> PredictionDistribution:
     if type(proposal) is not ActionProposal:
         raise TypeError("proposal must be an ActionProposal")
-    source_probabilities = _belief_probabilities(belief, states)
+    source_probabilities, projection_work = _belief_probabilities(belief, states)
     probabilities = _normalized_outcomes(
         source_probabilities,
         transition_probabilities,
@@ -262,7 +296,7 @@ def _prediction(
     )
     return PredictionDistribution(
         schema_version=CURRENT_SCHEMA_VERSION,
-        unit_cost=len(belief.hypotheses) + len(states) * len(states),
+        unit_cost=projection_work + len(states) * len(states),
         prediction_id=(
             f"{producer}:{belief.belief_id}:{proposal.proposal_id}:"
             f"{horizon_tick}"
@@ -312,8 +346,14 @@ class KnownTabularForwardModel:
         _horizon(self.horizon_ticks)
         if type(self.transitions) is not tuple or not self.transitions:
             raise TypeError("transitions must be a non-empty tuple")
+        if len(self.transitions) > _MAX_TABLE_ITEMS:
+            raise ValueError(
+                f"transitions must contain at most {_MAX_TABLE_ITEMS} values"
+            )
         if any(type(item) is not KnownTransition for item in self.transitions):
             raise TypeError("transitions must contain only KnownTransition values")
+        for item in self.transitions:
+            item.__post_init__()
         keys = tuple(
             (item.action, item.source_state_id, item.target_state_id)
             for item in self.transitions
@@ -349,6 +389,7 @@ class KnownTabularForwardModel:
     ) -> PredictionDistribution:
         """Project a belief through the proposal's known transition row."""
 
+        self.__post_init__()
         if type(proposal) is not ActionProposal:
             raise TypeError("proposal must be an ActionProposal")
         if proposal.action not in self.actions:
@@ -394,9 +435,15 @@ class LearnedTabularForwardModel:
             raise ValueError("prior_count must be > 0.0")
         if type(self.counts) is not tuple:
             raise TypeError("counts must be a tuple")
+        if len(self.counts) > _MAX_TABLE_ITEMS:
+            raise ValueError(
+                f"counts must contain at most {_MAX_TABLE_ITEMS} values"
+            )
         if self.counts:
             if any(type(item) is not TransitionCount for item in self.counts):
                 raise TypeError("counts must contain only TransitionCount values")
+            for item in self.counts:
+                item.__post_init__()
             keys = tuple(
                 (item.action, item.source_state_id, item.target_state_id)
                 for item in self.counts
@@ -440,6 +487,7 @@ class LearnedTabularForwardModel:
     ) -> PredictionDistribution:
         """Emit a normalized posterior-predictive distribution."""
 
+        self.__post_init__()
         if type(proposal) is not ActionProposal:
             raise TypeError("proposal must be an ActionProposal")
         if proposal.action not in self.actions:
@@ -473,6 +521,7 @@ class LearnedTabularForwardModel:
     ) -> LearnedTabularForwardModel:
         """Return a model revised by one public belief-action-belief sample."""
 
+        self.__post_init__()
         if type(before) is not BeliefState or type(after) is not BeliefState:
             raise TypeError("before and after must be BeliefState values")
         if type(proposal) is not ActionProposal:
@@ -481,8 +530,8 @@ class LearnedTabularForwardModel:
             raise ValueError("proposal action is outside the learned model")
         if after.revision_tick - before.revision_tick != self.horizon_ticks:
             raise ValueError("belief ticks must span the configured prediction horizon")
-        before_probabilities = _belief_probabilities(before, self.states)
-        after_probabilities = _belief_probabilities(after, self.states)
+        before_probabilities, _ = _belief_probabilities(before, self.states)
+        after_probabilities, _ = _belief_probabilities(after, self.states)
         state_index = {
             state.state_id: index for index, state in enumerate(self.states)
         }
