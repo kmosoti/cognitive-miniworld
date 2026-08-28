@@ -49,6 +49,8 @@ _MAX_SOURCE_EVENT_IDS: Final = 10_000
 _MAX_RECORD_WORK: Final = 65_536
 _MAX_RETRIEVAL_RESULTS: Final = 32
 _MAX_RETRIEVAL_WORK: Final = 65_536
+_RETRIEVAL_RECORD_VALIDATION_PASSES: Final = 4
+_RETRIEVAL_COMPARISON_PASSES: Final = 2
 
 _RELATIONS: Final = ("exact", "conflict", "query-only", "record-only")
 _ENCODER = msgspec.json.Encoder(order="deterministic")
@@ -513,7 +515,7 @@ def _preflight_inputs(
     decision: object,
     outcomes: object,
     error: object,
-) -> None:
+) -> int:
     """Reject excessive graph work before scanning leaf values or provenance."""
 
     _bounded_tuple(
@@ -677,7 +679,7 @@ def _preflight_inputs(
     )
     if source_event_count > _MAX_SOURCE_EVENT_IDS:
         raise ValueError("episode provenance exceeds the source-event limit")
-    _record_work(
+    return _record_work(
         cast(tuple[FeatureValue, ...], context),
         belief,
         checked_references,
@@ -809,6 +811,34 @@ def _validated_inputs(
         source_ids,
         work,
     )
+
+
+def _retrieval_work(
+    records: tuple[EpisodicRecord, ...],
+    query: tuple[FeatureValue, ...],
+) -> int:
+    work = 0
+    for record in records:
+        if type(record.trace) is not ExperienceTrace:
+            raise TypeError("record.trace must be an ExperienceTrace")
+        record_work = _preflight_inputs(
+            context=record.trace.context,
+            belief=record.belief,
+            references=record.references,
+            proposals=record.proposals,
+            predictions=record.predictions,
+            decision=record.decision,
+            outcomes=record.outcomes,
+            error=record.error,
+        )
+        comparison_work = len(query) + len(record.trace.context)
+        work += (
+            _RETRIEVAL_RECORD_VALIDATION_PASSES * record_work
+            + _RETRIEVAL_COMPARISON_PASSES * comparison_work
+        )
+        if work > _MAX_RETRIEVAL_WORK:
+            raise ValueError("retrieval exceeds its deterministic work limit")
+    return work
 
 
 class EpisodicRecord(
@@ -1269,20 +1299,27 @@ class EpisodicRecorder(
     ) -> EpisodicRetrieval:
         """Return positive matches with inspectable score contributions."""
 
-        self.__post_init__()
         query = _validate_features(context, "context", nonempty=True)
         if len(query) > _MAX_CONTEXT_FEATURES:
             raise ValueError(
                 f"context must contain at most {_MAX_CONTEXT_FEATURES} features"
             )
         result_limit = _positive_int(limit, "limit", _MAX_RETRIEVAL_RESULTS)
-        conservative_work = sum(
-            len(query) + len(record.trace.context) for record in self.records
+        capacity = _positive_int(self.capacity, "capacity", _MAX_CAPACITY)
+        records = cast(
+            tuple[EpisodicRecord, ...],
+            _bounded_tuple(
+                self.records,
+                EpisodicRecord,
+                "records",
+                capacity,
+                nonempty=False,
+            ),
         )
-        if conservative_work > _MAX_RETRIEVAL_WORK:
-            raise ValueError("retrieval exceeds its deterministic work limit")
+        conservative_work = _retrieval_work(records, query)
+        self.__post_init__()
         candidates = []
-        for record in self.records:
+        for record in records:
             evidence, exact, compared, score = _match_evidence(
                 query,
                 record.trace.context,

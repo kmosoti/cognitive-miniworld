@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 
+import msgspec
 import pytest
 
 from cmw.agents.arbitration import (
@@ -360,6 +361,25 @@ def test_choice_entropy_is_normalized_for_more_than_two_candidates() -> None:
     assert result.decision.selected_proposal_id == "alpha"
     assert result.decision.uncertainty.confidence == 0.0
     assert result.decision.uncertainty.entropy == pytest.approx(1.0)
+
+
+def test_independent_result_recomputes_choice_entropy() -> None:
+    candidates = tuple(
+        _proposal(action, reversible=True) for action in ("alpha", "beta", "gamma")
+    )
+    predictions = tuple(
+        _prediction(candidate, (("safe", 1.0, True),)) for candidate in candidates
+    )
+    result = _arbitrate(candidates, predictions)
+    uncertainty = msgspec.structs.replace(result.decision.uncertainty, entropy=0.0)
+    decision = msgspec.structs.replace(result.decision, uncertainty=uncertainty)
+
+    with pytest.raises(ValueError, match="choice entropy"):
+        ArbitrationResult(
+            weights=result.weights,
+            decision=decision,
+            values=result.values,
+        )
 
 
 def test_zero_probability_outcomes_do_not_change_information_value() -> None:

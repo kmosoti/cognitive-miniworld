@@ -131,6 +131,24 @@ def _selection_key(value: ActionValue) -> tuple[float, float, bool, float, str, 
     )
 
 
+def _choice_entropy(selectable: tuple[ActionValue, ...]) -> float:
+    if len(selectable) <= 1:
+        return 0.0
+    values = tuple(value.total_value for value in selectable)
+    maximum = max(values)
+    exponentials = tuple(math.exp(value - maximum) for value in values)
+    total = math.fsum(exponentials)
+    probabilities = tuple(value / total for value in exponentials)
+    entropy = -math.fsum(
+        probability * math.log(probability)
+        for probability in probabilities
+        if probability > 0.0
+    )
+    return _canonical(
+        min(1.0, max(0.0, entropy / math.log(len(probabilities))))
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class ArbitrationResult:
     """Selected decision plus the complete, proposal-sorted score table."""
@@ -190,6 +208,8 @@ class ArbitrationResult:
         )
         if selected_value != min(selectable, key=_selection_key):
             raise ValueError("decision must select the canonical winning value")
+        if self.decision.uncertainty.entropy != _choice_entropy(selectable):
+            raise ValueError("decision choice entropy must match the selectable values")
         if self.decision.action != selected_value.action:
             raise ValueError("decision action must match the selected value")
         expected_rationale = (
@@ -841,22 +861,9 @@ def _decision_uncertainty(
     )
     margin = max(0.0, selected.total_value - ordered[1])
     margin_confidence = margin / (1.0 + margin)
-    maximum = ordered[0]
-    exponentials = tuple(math.exp(value - maximum) for value in ordered)
-    total = math.fsum(exponentials)
-    probabilities = tuple(value / total for value in exponentials)
-    entropy = -math.fsum(
-        probability * math.log(probability)
-        for probability in probabilities
-        if probability > 0.0
-    )
-    normalized_entropy = min(
-        1.0,
-        max(0.0, entropy / math.log(len(probabilities))),
-    )
     return (
         _canonical(source_confidence * margin_confidence),
-        _canonical(normalized_entropy),
+        _choice_entropy(selectable),
     )
 
 

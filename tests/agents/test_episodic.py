@@ -330,6 +330,28 @@ def test_retrieval_uses_recency_then_trace_id_as_canonical_tie_breaks() -> None:
     assert result.matches[0].record.trace.tick == 3
 
 
+def test_retrieval_charges_complete_record_validation_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    memory = _record(EpisodicRecorder(capacity=4), 1)
+    memory = _record(memory, 3)
+    query = (_feature("cue", "shared"), _feature("regime", "current"))
+    expected_work = sum(
+        (
+            episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * record.unit_cost
+            + episodic_module._RETRIEVAL_COMPARISON_PASSES
+            * (len(query) + len(record.trace.context))
+        )
+        for record in memory.records
+    )
+
+    assert memory.retrieve(query).unit_cost == expected_work
+
+    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", expected_work - 1)
+    with pytest.raises(ValueError, match=r"retrieval.*work limit"):
+        memory.retrieve(query)
+
+
 def test_retrieval_does_not_collapse_type_equivalent_scalar_context() -> None:
     memory = EpisodicRecorder(capacity=2).record(
         episode_id="typed-context",
