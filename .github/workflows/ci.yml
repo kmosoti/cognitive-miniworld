@@ -66,8 +66,8 @@ jobs:
             knowledge/cognitive-miniworld-knowledge-graph.jsonld
 
       # One invocation collects every marker, so the replay gates from
-      # MW-003 and the smoke experiments from MW-005 fail this job without
-      # a workflow change.
+      # MW-003 and the fixture/baseline smoke experiments from MW-005/MW-007
+      # fail this job without a workflow change.
       - name: Tests (unit, property, replay, smoke)
         run: uv run --locked pytest
 

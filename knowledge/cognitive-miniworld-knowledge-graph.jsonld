@@ -2632,6 +2632,7 @@
       "label": "Build the Cognitive Miniworld Primitive Testbed",
       "description": "Implement a deterministic, partially observable miniworld and an ablation-first agent harness that can falsify the project hypotheses one primitive at a time.",
       "objective": "Deliver reproducible evidence about whether candidate primitives improve regulation, epistemics, learning, and compute efficiency over explicit baselines.",
+      "status": "active",
       "implements": "cmw:miniworld/viability-grid",
       "hypothesis": [
         "cmw:theory/endogenous-regulation",
@@ -2667,6 +2668,7 @@
       "identifier": "MW-FOUNDATION",
       "label": "Foundation and reproducibility",
       "description": "Build contracts, deterministic kernel, event sourcing, scenario manifests, telemetry, baselines, and oracle.",
+      "status": "complete",
       "implements": [],
       "dependsOn": [],
       "isPartOf": "cmw:epic/MW-EPIC-001",
@@ -2679,6 +2681,10 @@
         "cmw:issue/MW-006",
         "cmw:issue/MW-007"
       ],
+      "acceptanceCriterion": [
+        "Deterministic replay passes end to end.",
+        "Baseline performance is stable enough to expose a measurable oracle gap."
+      ],
       "@id": "cmw:work/MW-FOUNDATION",
       "@type": "cmw:WorkPackage"
     },
@@ -2686,6 +2692,7 @@
       "identifier": "MW-CORE",
       "label": "Predictive closed-loop spine",
       "description": "Establish the smallest nonlinguistic loop that can estimate, predict, compare, choose, act, and learn from error.",
+      "status": "proposed",
       "implements": [
         "cmw:primitive/state-estimator",
         "cmw:primitive/forward-model",
@@ -2704,6 +2711,9 @@
         "cmw:issue/MW-013",
         "cmw:issue/MW-014"
       ],
+      "acceptanceCriterion": [
+        "The nonlinguistic loop survives, recovers from hidden-state errors, and outperforms a reactive controller in a delayed-consequence scenario."
+      ],
       "@id": "cmw:work/MW-CORE",
       "@type": "cmw:WorkPackage"
     },
@@ -2711,6 +2721,7 @@
       "identifier": "MW-REGULATION",
       "label": "Endogenous regulation",
       "description": "Replace static externally supplied targets with predicted viability trajectories and state-relative value.",
+      "status": "proposed",
       "implements": [
         "cmw:primitive/reference-generator"
       ],
@@ -2722,6 +2733,9 @@
         "cmw:issue/MW-020",
         "cmw:issue/MW-021"
       ],
+      "acceptanceCriterion": [
+        "Dynamic references beat fixed set points on the preregistered demand-shift experiment without increasing irreversible errors."
+      ],
       "@id": "cmw:work/MW-REGULATION",
       "@type": "cmw:WorkPackage"
     },
@@ -2729,6 +2743,7 @@
       "identifier": "MW-ALLOCATION",
       "label": "Salience, curiosity, and metacontrol",
       "description": "Allocate attention and compute under distractor floods, learnable uncertainty, and irreducible noise.",
+      "status": "proposed",
       "implements": [
         "cmw:primitive/salience-router",
         "cmw:primitive/metacontrol-allocator",
@@ -2743,6 +2758,9 @@
         "cmw:issue/MW-031",
         "cmw:issue/MW-032"
       ],
+      "acceptanceCriterion": [
+        "The agent distinguishes novelty from learnability and avoids both distraction capture and unlimited deliberation."
+      ],
       "@id": "cmw:work/MW-ALLOCATION",
       "@type": "cmw:WorkPackage"
     },
@@ -2750,6 +2768,7 @@
       "identifier": "MW-LEARNING",
       "label": "Memory, credit, consolidation, and habits",
       "description": "Test fast versus slow learning, delayed credit, provenance, and reversible skill compilation.",
+      "status": "proposed",
       "implements": [
         "cmw:primitive/episodic-recorder",
         "cmw:primitive/working-memory-gate",
@@ -2769,6 +2788,9 @@
         "cmw:issue/MW-043",
         "cmw:issue/MW-044"
       ],
+      "acceptanceCriterion": [
+        "The agent gains efficiency from experience without catastrophic overwrite, superstition, or irreversible habit rigidity."
+      ],
       "@id": "cmw:work/MW-LEARNING",
       "@type": "cmw:WorkPackage"
     },
@@ -2776,6 +2798,7 @@
       "identifier": "MW-APPRAISAL",
       "label": "Appraisal and self-estimation",
       "description": "Test emotion-like policy differentiation and calibrated self-limitation without categorical emotion modules.",
+      "status": "proposed",
       "implements": [
         "cmw:primitive/appraiser",
         "cmw:primitive/self-estimator"
@@ -2789,6 +2812,9 @@
         "cmw:issue/MW-050",
         "cmw:issue/MW-051"
       ],
+      "acceptanceCriterion": [
+        "The system exhibits calibrated self-limitation and control-policy differentiation without a categorical emotion module."
+      ],
       "@id": "cmw:work/MW-APPRAISAL",
       "@type": "cmw:WorkPackage"
     },
@@ -2796,6 +2822,7 @@
       "identifier": "MW-DEFERRED",
       "label": "Workspace, development, and language",
       "description": "Run only after the nonlinguistic core has passed its gates.",
+      "status": "deferred",
       "implements": [
         "cmw:primitive/workspace-gate",
         "cmw:primitive/plasticity-scheduler",
@@ -2818,7 +2845,7 @@
       "identifier": "MW-001",
       "label": "Repository and quality gates",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [],
       "implements": [],
       "tests": [],
@@ -2833,7 +2860,7 @@
       "identifier": "MW-002",
       "label": "Canonical data contracts",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-001"
       ],
@@ -2866,7 +2893,7 @@
       "identifier": "MW-003",
       "label": "Explicit RNG and deterministic replay",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-002"
       ],
@@ -2885,7 +2912,7 @@
       "identifier": "MW-004",
       "label": "World kernel",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-003"
       ],
@@ -2904,7 +2931,7 @@
       "identifier": "MW-005",
       "label": "Scenario manifests and fixture library",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-004"
       ],
@@ -2939,7 +2966,7 @@
       "identifier": "MW-006",
       "label": "Telemetry and metrics",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-004",
         "cmw:issue/MW-005"
@@ -2978,7 +3005,7 @@
       "identifier": "MW-007",
       "label": "Baselines and oracle",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-004",
         "cmw:issue/MW-005",
@@ -3035,7 +3062,9 @@
         "cmw:experiment/stale-memory"
       ],
       "acceptanceCriterion": [
-        "Beliefs are calibrated and recover after contradictory evidence without oracle leakage."
+        "The posterior is properly normalized.",
+        "Calibration beats the last-observation baseline in partial-observability scenarios.",
+        "Contradictory evidence can reverse a stale belief."
       ],
       "isPartOf": "cmw:work/MW-CORE",
       "@id": "cmw:issue/MW-010",
@@ -3056,7 +3085,9 @@
         "cmw:experiment/transition-shift"
       ],
       "acceptanceCriterion": [
-        "Action-conditioned forecasts beat the identity baseline and adapt after transition shift."
+        "Prediction distributions use a proper scoring rule.",
+        "The learned model adapts after a regime shift.",
+        "Action selection with predictions beats the reactive baseline in at least one delayed-consequence scenario."
       ],
       "isPartOf": "cmw:work/MW-CORE",
       "@id": "cmw:issue/MW-011",
@@ -3077,7 +3108,9 @@
         "cmw:experiment/error-disagreement"
       ],
       "acceptanceCriterion": [
-        "Prediction, control, outcome, timing, agency, and learning-progress channels remain separately inspectable."
+        "The decomposer produces distinct sensory, control, outcome, timing, agency, and learning-progress channels.",
+        "Expected-but-undesirable and unexpected-but-safe fixtures produce different bundles.",
+        "The scalar-error baseline remains available for ablation."
       ],
       "isPartOf": "cmw:work/MW-CORE",
       "@id": "cmw:issue/MW-012",
@@ -3098,7 +3131,9 @@
         "cmw:experiment/affordance-coverage"
       ],
       "acceptanceCriterion": [
-        "Candidate reduction preserves the best feasible action while reducing invalid proposals."
+        "Only actions whose observable preconditions are believed possible are generated.",
+        "Multiple candidates remain available when evidence is incomplete.",
+        "Failure to generate and failure to select are separately observable."
       ],
       "isPartOf": "cmw:work/MW-CORE",
       "@id": "cmw:issue/MW-013",
@@ -3121,7 +3156,9 @@
         "cmw:experiment/appraisal-contrast"
       ],
       "acceptanceCriterion": [
-        "Selection is reproducible and exposes value, risk, information, cost, reversibility, and uncertainty contributions."
+        "Each decision includes a rationale and uncertainty.",
+        "Dominated irreversible actions are avoided when a safer alternative exists.",
+        "Regret is measurable against the oracle."
       ],
       "isPartOf": "cmw:work/MW-CORE",
       "@id": "cmw:issue/MW-014",
@@ -3142,7 +3179,9 @@
         "cmw:experiment/dynamic-demand-shift"
       ],
       "acceptanceCriterion": [
-        "Dynamic references outperform the static provider during predictable demand shifts without violating safety gates."
+        "References vary with predicted demand and state.",
+        "The agent anticipates a known demand rise rather than waiting for depletion.",
+        "Reference provenance identifies the state estimate and forecast that produced each trajectory."
       ],
       "isPartOf": "cmw:work/MW-REGULATION",
       "@id": "cmw:issue/MW-020",
@@ -3161,7 +3200,8 @@
         "cmw:experiment/dynamic-demand-shift"
       ],
       "acceptanceCriterion": [
-        "The same outcome changes value with internal state and remains decomposable from prediction error."
+        "The same resource has different marginal value under deprivation, sufficiency, and excess.",
+        "No reward constant is hard-coded as universally positive."
       ],
       "isPartOf": "cmw:work/MW-REGULATION",
       "operationalizes": [
@@ -3186,7 +3226,9 @@
         "cmw:experiment/distractor-flood"
       ],
       "acceptanceCriterion": [
-        "Quiet viability-critical signals survive distractor floods with higher value per compute."
+        "Low-novelty viability signals are preserved under a distractor flood.",
+        "Novelty is not treated as equivalent to importance.",
+        "Admitted and dropped signals are reported with reasons."
       ],
       "isPartOf": "cmw:work/MW-ALLOCATION",
       "@id": "cmw:issue/MW-030",
@@ -3209,7 +3251,9 @@
         "cmw:experiment/sensor-degradation"
       ],
       "acceptanceCriterion": [
-        "Adaptive compute allocation beats at least one fixed budget without increasing irreversible mistakes."
+        "Fixed-budget, always-max, and expected-value-of-compute policies are implemented.",
+        "Computation stops when expected marginal gain falls below cost.",
+        "Value-per-compute improves over at least one fixed policy."
       ],
       "isPartOf": "cmw:work/MW-ALLOCATION",
       "@id": "cmw:issue/MW-031",
@@ -3232,7 +3276,10 @@
         "cmw:experiment/noisy-tv"
       ],
       "acceptanceCriterion": [
-        "Exploration persists for learnable uncertainty and decays for irreducible noise."
+        "The agent explores a learnable unknown.",
+        "Exploration decreases after mastery.",
+        "The agent disengages from the noisy TV after observed learning progress remains near zero.",
+        "Information gain is scored by downstream model or decision improvement, not similarity."
       ],
       "isPartOf": "cmw:work/MW-ALLOCATION",
       "@id": "cmw:issue/MW-032",
@@ -3255,7 +3302,9 @@
         "cmw:experiment/consolidation-interference"
       ],
       "acceptanceCriterion": [
-        "Episodes preserve context, provenance, predictions, outcomes, errors, and eligibility without directly replacing present state."
+        "Episodes record context, belief, references, proposal, prediction, action, outcome, errors, and provenance.",
+        "Retrieval results explain why they matched.",
+        "Retrieval usefulness is measured by decision delta."
       ],
       "isPartOf": "cmw:work/MW-LEARNING",
       "@id": "cmw:issue/MW-040",
@@ -3277,7 +3326,9 @@
         "cmw:experiment/delayed-credit"
       ],
       "acceptanceCriterion": [
-        "Delayed outcomes update eligible causal contributors more precisely than global reinforcement."
+        "Eligibility decays explicitly over simulated time.",
+        "Delayed reward updates true causal contributors more than distractors.",
+        "Global reinforcement remains an ablation baseline."
       ],
       "isPartOf": "cmw:work/MW-LEARNING",
       "@id": "cmw:issue/MW-041",
@@ -3299,7 +3350,9 @@
         "cmw:experiment/consolidation-interference"
       ],
       "acceptanceCriterion": [
-        "Slow integration reduces interference, preserves provenance, and remains reversible after disconfirming evidence."
+        "New episodes are interleaved rather than immediately overwriting general knowledge.",
+        "Semantic claims retain links to supporting and contradicting episodes.",
+        "A false generalization can be revised."
       ],
       "isPartOf": "cmw:work/MW-LEARNING",
       "@id": "cmw:issue/MW-042",
@@ -3322,7 +3375,9 @@
         "cmw:experiment/habit-reversal"
       ],
       "acceptanceCriterion": [
-        "Compiled behavior saves compute before a shift and is suspended rapidly after its error signature changes."
+        "Repeated successful decisions consume less compute after compilation.",
+        "Distribution-shift evidence suspends the policy.",
+        "The deliberative path remains available for relearning."
       ],
       "isPartOf": "cmw:work/MW-LEARNING",
       "@id": "cmw:issue/MW-043",
@@ -3344,7 +3399,8 @@
         "cmw:experiment/working-memory-interference"
       ],
       "acceptanceCriterion": [
-        "Bounded active state preserves critical representations better than FIFO without material viability loss."
+        "A quiet causal or viability-relevant cue survives distractor churn better than FIFO.",
+        "Compute savings do not exceed the preregistered viability noninferiority margin."
       ],
       "isPartOf": "cmw:work/MW-LEARNING",
       "@id": "cmw:issue/MW-044",
@@ -3366,7 +3422,8 @@
         "cmw:experiment/appraisal-contrast"
       ],
       "acceptanceCriterion": [
-        "Certainty, imminence, agency, and controllability produce policy differences beyond valence alone."
+        "Same-valence scenarios with different controllability or certainty produce different policies.",
+        "Emotion labels are optional diagnostic projections and never inputs to control."
       ],
       "isPartOf": "cmw:work/MW-APPRAISAL",
       "@id": "cmw:issue/MW-050",
@@ -3389,7 +3446,9 @@
         "cmw:experiment/sensor-degradation"
       ],
       "acceptanceCriterion": [
-        "Confidence tracks accuracy and changes information gathering or action intensity under silent degradation."
+        "The self-estimator tracks sensor reliability, model calibration, resource state, and recent failure regime.",
+        "Silent degradation lowers confidence before catastrophic action.",
+        "Confidence changes evidence gathering or action intensity."
       ],
       "isPartOf": "cmw:work/MW-APPRAISAL",
       "@id": "cmw:issue/MW-051",
@@ -3461,7 +3520,7 @@
     },
     {
       "label": "Cognitive Miniworld Evidence and Primitive Knowledge Graph",
-      "description": "Claim-level graph linking sources, epistemic status, candidate primitives, failure modes, experiments, metrics, and the implementation epic.",
+      "description": "Claim-level graph linking sources, epistemic status, candidate primitives, failure modes, experiments, metrics, and the implementation program.",
       "identifier": "0.1.0",
       "datePublished": "2026",
       "hasPart": "cmw:project/cognitive-miniworld",

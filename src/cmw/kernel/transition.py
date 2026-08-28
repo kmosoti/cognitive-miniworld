@@ -7,9 +7,18 @@ from dataclasses import replace
 from cmw.contracts import ActionProposal, FeatureValue
 from cmw.kernel._state import (
     ActionName,
+    ActionRule,
+    ActionRuleSchedule,
     DelayedEffect,
+    DemandSchedule,
+    HazardCell,
+    HazardSchedule,
     Position,
     ResourceCell,
+    ResourceSchedule,
+    ScheduledWorldChange,
+    SensorReliabilitySchedule,
+    WorldConfig,
     WorldState,
 )
 from cmw.rng import NamedRng, RngSnapshot
@@ -64,11 +73,17 @@ def transition(
     attempted, executed, failure, position = _resolve_action(state, action, stream)
     rule = state.config.rule_for(executed)
 
+    config = state.config
     energy = state.energy + rule.energy_gain - rule.energy_cost
     integrity = state.integrity + rule.integrity_gain - rule.integrity_cost
+    ambient_demand_multiplier = state.ambient_demand_multiplier
     resources = state.resources
+    hazards = state.hazards
+    sensor_reliability = state.sensor_reliability
     consumed_units = state.consumed_resource_units
+    resource_unit_capacity = state.resource_unit_capacity
     delayed_effects = state.delayed_effects
+    scheduled_changes = state.scheduled_changes
 
     if executed is ActionName.CONSUME:
         resource_index = _consumable_index(resources, position)
@@ -101,10 +116,30 @@ def transition(
     terminal = False
     for _ in range(rule.duration_ticks):
         tick += 1
-        energy -= state.config.base_energy_drain * state.ambient_demand_multiplier
+        due_changes, scheduled_changes = _pop_due_changes(
+            scheduled_changes,
+            tick,
+        )
+        (
+            config,
+            ambient_demand_multiplier,
+            hazards,
+            sensor_reliability,
+            resources,
+            resource_unit_capacity,
+        ) = _apply_world_changes(
+            due_changes,
+            config=config,
+            ambient_demand_multiplier=ambient_demand_multiplier,
+            hazards=hazards,
+            sensor_reliability=sensor_reliability,
+            resources=resources,
+            resource_unit_capacity=resource_unit_capacity,
+        )
+        energy -= config.base_energy_drain * ambient_demand_multiplier
         integrity -= sum(
             hazard.integrity_cost_per_tick
-            for hazard in state.hazards
+            for hazard in hazards
             if hazard.active and hazard.position == position
         )
         due, delayed_effects = _pop_due_effects(delayed_effects, tick)
@@ -121,20 +156,22 @@ def transition(
         previous_position = state.position
 
     return WorldState(
-        config=state.config,
+        config=config,
         tick=tick,
         position=position,
         previous_position=previous_position,
         energy=energy,
         integrity=integrity,
-        ambient_demand_multiplier=state.ambient_demand_multiplier,
+        ambient_demand_multiplier=ambient_demand_multiplier,
         resources=resources,
-        hazards=state.hazards,
-        sensor_reliability=state.sensor_reliability,
+        hazards=hazards,
+        sensor_reliability=sensor_reliability,
+        reported_sensor_reliability=state.reported_sensor_reliability,
         delayed_effects=delayed_effects,
+        scheduled_changes=scheduled_changes,
         compute_allowance=state.compute_allowance,
         world_rng=stream.snapshot(),
-        resource_unit_capacity=state.resource_unit_capacity,
+        resource_unit_capacity=resource_unit_capacity,
         consumed_resource_units=consumed_units,
         terminal=terminal,
         last_attempted_action=attempted,
@@ -235,6 +272,117 @@ def _pop_due_effects(
         len(effects),
     )
     return effects[:split], effects[split:]
+
+
+def _pop_due_changes(
+    changes: tuple[ScheduledWorldChange, ...],
+    tick: int,
+) -> tuple[tuple[ScheduledWorldChange, ...], tuple[ScheduledWorldChange, ...]]:
+    split = next(
+        (index for index, change in enumerate(changes) if change.due_tick > tick),
+        len(changes),
+    )
+    return changes[:split], changes[split:]
+
+
+def _apply_world_changes(
+    changes: tuple[ScheduledWorldChange, ...],
+    *,
+    config: WorldConfig,
+    ambient_demand_multiplier: float,
+    hazards: tuple[HazardCell, ...],
+    sensor_reliability: float,
+    resources: tuple[ResourceCell, ...],
+    resource_unit_capacity: int,
+) -> tuple[
+    WorldConfig,
+    float,
+    tuple[HazardCell, ...],
+    float,
+    tuple[ResourceCell, ...],
+    int,
+]:
+    """Apply already ordered changes without mutating evaluator state."""
+
+    # Local imports are avoided here: the exact types remain explicit at the
+    # module boundary, while this helper keeps the transition loop readable.
+    for change in changes:
+        if type(change) is DemandSchedule:
+            ambient_demand_multiplier = change.multiplier
+        elif type(change) is SensorReliabilitySchedule:
+            sensor_reliability = change.reliability
+        elif type(change) is ActionRuleSchedule:
+            action_rules = tuple(
+                _updated_action_rule(rule, change)
+                if rule.action is change.action
+                else rule
+                for rule in config.action_rules
+            )
+            config = replace(config, action_rules=action_rules)
+        elif type(change) is HazardSchedule:
+            hazards = tuple(
+                replace(
+                    hazard,
+                    active=change.active,
+                    integrity_cost_per_tick=(
+                        hazard.integrity_cost_per_tick
+                        if change.integrity_cost_per_tick is None
+                        else change.integrity_cost_per_tick
+                    ),
+                )
+                if hazard.hazard_id == change.hazard_id
+                else hazard
+                for hazard in hazards
+            )
+        elif type(change) is ResourceSchedule:
+            updated: list[ResourceCell] = []
+            for resource in resources:
+                if resource.resource_id != change.resource_id:
+                    updated.append(resource)
+                    continue
+                resource_unit_capacity += change.units - resource.units
+                updated.append(replace(resource, units=change.units))
+            resources = tuple(updated)
+        else:  # pragma: no cover - WorldState rejects unsupported changes.
+            raise AssertionError("unsupported scheduled world change")
+    return (
+        config,
+        ambient_demand_multiplier,
+        hazards,
+        sensor_reliability,
+        resources,
+        resource_unit_capacity,
+    )
+
+
+def _updated_action_rule(
+    rule: ActionRule,
+    change: ActionRuleSchedule,
+) -> ActionRule:
+    return replace(
+        rule,
+        duration_ticks=(
+            rule.duration_ticks
+            if change.duration_ticks is None
+            else change.duration_ticks
+        ),
+        energy_cost=(
+            rule.energy_cost if change.energy_cost is None else change.energy_cost
+        ),
+        integrity_cost=(
+            rule.integrity_cost
+            if change.integrity_cost is None
+            else change.integrity_cost
+        ),
+        energy_gain=(
+            rule.energy_gain if change.energy_gain is None else change.energy_gain
+        ),
+        integrity_gain=(
+            rule.integrity_gain
+            if change.integrity_gain is None
+            else change.integrity_gain
+        ),
+    )
 
 
 def _ordered_effects(

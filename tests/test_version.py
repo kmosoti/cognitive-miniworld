@@ -1,4 +1,4 @@
-"""The semantic version travels into every run manifest (EPIC §13 MW-001)."""
+"""The semantic version travels into every run manifest."""
 
 import re
 import tomllib

@@ -2,18 +2,19 @@
 
 ViabilityGrid: a deterministic testbed for cognitive primitives.
 Primary runtime: CPython 3.14.7 free-threaded (`3.14.7t` in `uv`).
-Source of truth: `EPIC-001-cognitive-miniworld.md`. The acceptance
-criteria in EPIC §13 are the definition of done for each issue —
-verbatim, never weakened, never reinterpreted. `KICKOFF.md` defines
-the current mission scope. GitHub Project GORDIAN tracks delivery:
-`https://github.com/users/kmosoti/projects/8`. If EPIC, KICKOFF, and
-this file ever conflict, stop and ask Kennedy.
+Durable sources of truth are split by role: the knowledge graph records
+hypotheses, work packages, dependencies, experiments, and acceptance criteria;
+ADRs record architectural decisions; verdicts record completed evidence; code
+and tests define implemented behavior. GitHub Project GORDIAN authorizes active
+scope and delivery order: `https://github.com/users/kmosoti/projects/8`. If
+these sources conflict, stop and ask Kennedy.
 
 ## Session workflow
 
 - Work exactly one issue (MW-###) per session, in dependency order.
-- Loop: read the issue in EPIC §13 → restate its acceptance criteria
-  in your own words → plan → implement → run all gates → write
+- Loop: read the authorized GORDIAN item, its knowledge-graph node, and relevant
+  ADRs → restate its acceptance criteria in your own words → plan → implement →
+  run all gates → write
   `docs/verdicts/MW-###.md` (5–15 lines: what was built, evidence
   each criterion passes, deviations: none or listed) → commit.
 - Commit style: `MW-###: <imperative summary>`. Never commit failing
@@ -26,7 +27,7 @@ this file ever conflict, stop and ask Kennedy.
   features, no "while I'm here" refactors, no new dependencies
   beyond the approved list.
 
-## Hard invariants (EPIC §5 — enforce in code and tests)
+## Hard invariants
 
 1. All randomness flows through `src/cmw/rng.py` named streams.
    Per-stream seed = sha256(f"{root_seed}:{stream_name}") → int.
@@ -72,9 +73,8 @@ this file ever conflict, stop and ask Kennedy.
 
 `uv`, `ruff`, `ty`, `pytest`, `hypothesis`, `msgspec`; `numpy` only
 where a distribution genuinely requires it. Nothing else without an
-ADR and Kennedy's sign-off. Explicitly banned in core (EPIC §4):
-LLMs, neural frameworks, Gymnasium, web servers, databases, GUI,
-Rust.
+ADR and Kennedy's sign-off. Explicitly banned in core: LLMs, neural
+frameworks, Gymnasium, web servers, databases, GUI, and Rust.
 
 ## Commands
 
@@ -85,7 +85,6 @@ uv run --locked ty check
 uv run --locked pytest             # all tiers + runtime qualification
 uv run --locked python knowledge/validate_graph.py \
     knowledge/cognitive-miniworld-knowledge-graph.jsonld
-# once MW-003 lands:
 uv run --locked python -m cmw.replay <run_dir>   # must reproduce digests
 ```
 
@@ -94,7 +93,6 @@ exits 2 on failure; treat its warnings as review items, not noise.
 
 ## Decision records
 
-ADRs live in `docs/adr/`. ADR-001..009 are enumerated in EPIC §16;
-ADR-010..014 are specified in `KICKOFF.md`. ADR-015 supersedes ADR-001
-with the Python 3.14.7 free-threaded baseline and concurrency boundary.
-Any contract change after MW-002 requires a new ADR.
+ADRs live in `docs/adr/` and are self-contained. ADR-015 supersedes ADR-001
+with the Python 3.14.7 free-threaded baseline and concurrency boundary. Any
+contract change after MW-002 requires a new ADR.

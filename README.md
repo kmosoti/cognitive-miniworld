@@ -35,7 +35,7 @@ candidate modules receive immutable messages rather than privileged state.
 
 ## Experimental shape
 
-The planned loop is intentionally auditable from specification to verdict:
+The loop is intentionally auditable from specification to verdict:
 
 ```mermaid
 flowchart LR
@@ -51,13 +51,13 @@ flowchart LR
     V --> D{Promote, revise, or kill}
 ```
 
-The diagram is the target experiment topology, not a claim that every box is
-already implemented. Work lands in dependency order so later results rest on
-qualified reproducibility rather than retrofitted instrumentation.
+This topology is now executable for the Milestone 0 baseline/oracle
+qualification. Later candidate primitives enter through the same typed seams,
+one preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.4.0` contains the Milestone 0 substrate through MW-004:
+Package `0.7.0` completes the Milestone 0 experimental substrate:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -76,16 +76,36 @@ Package `0.4.0` contains the Milestone 0 substrate through MW-004:
   code receives four typed observation channels generated with an independent
   explicit RNG continuation; resource quality and other ground truth remain
   hidden.
+- `cmw.scenarios` defines strict canonical manifests, explicit smoke/CI/benchmark
+  seed tiers, typed schedules, an agent-safe projection, and seven deterministic
+  first-wave fixtures. Scheduled demand, transition, hazard, resource, and actual
+  sensor-reliability changes are applied immutably inside the world tick.
+- `cmw.telemetry` seals canonical events into bounded append-only JSONL, keeps
+  evaluator truth out of agent channels, derives viability and safety metrics
+  from the log alone, and records runtime diagnostics outside behavioral hashes.
+- `cmw.agents` supplies a reactive fixed-setpoint controller, last-observation
+  estimator, and random and prediction-error curiosity baselines. A closed
+  resolver maps every first-wave fixture to runnable ablations.
+- `cmw.experiments` runs isolated serial or free-threaded paired episodes,
+  materializes public stimuli without leaking evaluator schedules, confines the
+  tractable demand-shift oracle to evaluation code, and rejects excessive work
+  before compilation or worker creation.
+- The typed M0 gate revalidates run identities, replay hashes, event-derived
+  metrics, safety counts, and the deterministic bootstrap before evidence is
+  serialized.
 
-The scenario library, telemetry metrics, baselines, and oracle comparison are
-still ahead. MW-005's declarative fixtures are next; they supply scenario values
-to the kernel without changing its transition boundary.
+The frozen 100-seed demand-shift comparison passed: baseline viability AUC
+`0.1480487804878049`, oracle viability AUC `0.1876829268292683`, paired gain
+`0.039634146341463394` with 95% interval
+`[0.039634146341463346, 0.039634146341463346]`, and zero irreversible errors
+in either arm. The minimum meaningful effect was `0.02`. This qualifies the
+laboratory; it does not validate a later cognitive primitive.
 
 ## Try deterministic replay
 
 `uv` installs the required `3.14.7t` interpreter from `.python-version` when
-needed. The demo is domain-neutral: it qualifies the replay substrate without
-pretending the MW-004 world already exists.
+needed. This minimal demo isolates the replay mechanism; the experiment harness
+in the next section exercises the complete Milestone 0 world and evaluator.
 
 ```bash
 uv sync --locked --all-groups
@@ -97,6 +117,27 @@ uv run --locked python -m cmw.replay "$cmw_demo_dir"
 Both replay commands emit the same event-log and terminal-state hashes with
 `"matched": true`. Changing a canonical event, manifest, terminal state, or
 recorded summary makes replay exit non-zero.
+
+## Run the experiment harness
+
+Use the smoke tier while developing:
+
+```bash
+uv run --locked python -m cmw.demo --tier smoke --workers 2
+```
+
+The benchmark tier is the frozen decision run, not a tuning loop. It always
+uses seeds 1000–1099 and 10,000 paired-bootstrap resamples, and evidence paths
+are created exclusively rather than overwritten:
+
+```bash
+cmw_evidence_dir="$(mktemp -d)"
+uv run --locked python -m cmw.demo --tier benchmark --workers 4 \
+  --evidence "$cmw_evidence_dir/m0-evidence.jsonl.gz"
+```
+
+The complete result, evidence digest, interpretation, and deviations are in
+[the Milestone 0 verdict](docs/verdicts/M0.md).
 
 ## Design commitments
 
@@ -135,18 +176,18 @@ Focused tiers are available with `pytest -m property`, `pytest -m replay`,
 ## Project map
 
 ```text
-EPIC-001-cognitive-miniworld.md   hypotheses, architecture, work packages, gates
-KICKOFF.md                       active milestone scope and dependency order
-CLAUDE.md                        implementation invariants and working agreement
-knowledge/                       evidence graph, bounded claims, validator
-src/cmw/                         executable experimental substrate
-tests/                           unit, property, replay, and runtime gates
-docs/adr/                        accepted architectural decisions
-docs/verdicts/                   per-work-package and milestone evidence
+README.md          implemented architecture and operating constraints
+CLAUDE.md          implementation invariants and working agreement
+knowledge/         hypotheses, work packages, acceptance criteria, validator
+docs/adr/          durable architectural decisions
+docs/verdicts/     completed-work and milestone evidence
+src/cmw/           executable experimental substrate
+tests/             unit, property, replay, and runtime gates
 ```
 
-The [EPIC](EPIC-001-cognitive-miniworld.md) is the source of truth,
-[KICKOFF](KICKOFF.md) bounds the current mission, and
-[GORDIAN](https://github.com/users/kmosoti/projects/8) tracks delivery. The lab
-stops at the Milestone 0 gate until deterministic replay and stable baselines
-expose a measurable oracle gap on the demand-shift fixture.
+The durable research program and dependency graph live in the
+[knowledge graph](knowledge/cognitive-miniworld-knowledge-graph.jsonld), while
+[GORDIAN](https://github.com/users/kmosoti/projects/8) tracks active scope and
+delivery order. ADRs record decisions and verdicts record evidence. Milestone 0
+is closed with a measurable oracle gap; later primitives remain unpromoted until
+their own preregistered comparisons pass.

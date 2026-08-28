@@ -36,8 +36,11 @@ def _require_nonnegative_int(value: object, field: str) -> None:
 def _require_scalar(value: object, field: str) -> None:
     if type(value) not in {bool, int, float, str, type(None)}:
         raise TypeError(f"{field} must be an immutable JSON scalar")
-    if type(value) is float and not math.isfinite(value):
-        raise ValueError(f"{field} must not contain a non-finite float")
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError(f"{field} must not contain a non-finite float")
+        if value == 0.0 and math.copysign(1.0, value) < 0.0:
+            raise ValueError(f"{field} must use canonical positive zero")
 
 
 def _require_sorted_unique_names(

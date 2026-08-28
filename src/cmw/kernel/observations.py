@@ -49,7 +49,8 @@ def generate_observations(
         raise ValueError("rng must use the 'observations' stream")
 
     stream = NamedRng.from_snapshot(rng)
-    reliability = state.sensor_reliability
+    actual_reliability = state.sensor_reliability
+    reported_reliability = state.reported_sensor_reliability
     resource_here = any(
         resource.position == state.position and resource.units > 0
         for resource in state.resources
@@ -57,12 +58,12 @@ def generate_observations(
     hazard_here = any(
         hazard.position == state.position and hazard.active for hazard in state.hazards
     )
-    observed_resource = _observe_bool(resource_here, reliability, stream)
-    observed_hazard = _observe_bool(hazard_here, reliability, stream)
+    observed_resource = _observe_bool(resource_here, actual_reliability, stream)
+    observed_hazard = _observe_bool(hazard_here, actual_reliability, stream)
     observed_energy = _observe_scalar(
         state.energy,
         state.config.max_energy,
-        reliability,
+        actual_reliability,
         state.config.observation_noise_fraction,
         stream,
         maximum=state.config.max_energy,
@@ -70,7 +71,7 @@ def generate_observations(
     observed_integrity = _observe_scalar(
         state.integrity,
         state.config.max_integrity,
-        reliability,
+        actual_reliability,
         state.config.observation_noise_fraction,
         stream,
         maximum=state.config.max_integrity,
@@ -79,7 +80,7 @@ def generate_observations(
     observed_demand = _observe_scalar(
         state.ambient_demand_multiplier,
         demand_scale,
-        reliability,
+        actual_reliability,
         state.config.observation_noise_fraction,
         stream,
         maximum=None,
@@ -89,7 +90,7 @@ def generate_observations(
         _envelope(
             state,
             modality="exteroceptive",
-            reliability=reliability,
+            reliability=reported_reliability,
             values=(
                 _feature("resource_present", observed_resource, None),
                 _feature("hazard_present", observed_hazard, None),
@@ -98,7 +99,7 @@ def generate_observations(
         _envelope(
             state,
             modality="interoceptive",
-            reliability=reliability,
+            reliability=reported_reliability,
             values=(
                 _feature("energy", observed_energy, "units"),
                 _feature("integrity", observed_integrity, "units"),
