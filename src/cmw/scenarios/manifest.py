@@ -820,6 +820,7 @@ class ScenarioManifest(
         action_names = {rule.action for rule in self.world.action_rules}
         resource_ids = {resource.resource_id for resource in self.world.resources}
         hazard_ids = {hazard.hazard_id for hazard in self.world.hazards}
+        stimulus_id_set = set(stimulus_ids)
         for change in self.schedule:
             if type(change) is TransitionChange and change.action not in action_names:
                 raise ValueError("transition schedule targets an unknown action")
@@ -830,8 +831,9 @@ class ScenarioManifest(
                 raise ValueError("resource schedule targets an unknown resource")
             if type(change) is HazardChange and change.hazard_id not in hazard_ids:
                 raise ValueError("hazard schedule targets an unknown hazard")
-            if type(change) is StimulusChange and change.stimulus_id not in set(
-                stimulus_ids
+            if (
+                type(change) is StimulusChange
+                and change.stimulus_id not in stimulus_id_set
             ):
                 raise ValueError("stimulus schedule targets an unknown stimulus")
 
