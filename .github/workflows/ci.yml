@@ -4,19 +4,24 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Nightly performance tier: the relative scaling gate is an environment
+    # check, so it needs a cadence that is independent of contribution volume.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   gates:
     name: quality gates (Python 3.14.7t)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       UV_PYTHON: 3.14.7t
     steps:
@@ -65,16 +70,27 @@ jobs:
           uv run --locked python knowledge/validate_graph.py \
             knowledge/cognitive-miniworld-knowledge-graph.jsonld
 
-      # One invocation collects every marker, so the replay gates from
-      # MW-003 and the fixture/baseline smoke experiments from MW-005/MW-007
-      # fail this job without a workflow change.
+      # This job deliberately skips the `performance` tier, which measures
+      # relative thread scaling of the runtime rather than the correctness of
+      # this repository; it runs in the `performance` job below. Nothing is
+      # lost silently: every job records the node ids it selected, and the
+      # `coverage` job fails if their union is not the whole suite.
       - name: Tests (unit, property, replay, smoke)
-        run: uv run --locked pytest
+        env:
+          CMW_COLLECTED_OUT: ${{ github.workspace }}/collected/gates.txt
+        run: uv run --locked pytest -m "not performance"
+
+      - name: Record selected tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: collected-gates
+          path: collected/gates.txt
+          retention-days: 1
 
   gil-compatibility:
     name: compatibility (Python 3.14.7 with GIL)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     env:
       UV_PYTHON: 3.14.7+gil
     steps:
@@ -110,4 +126,122 @@ jobs:
           PY
 
       - name: Compatibility tests
+        env:
+          CMW_COLLECTED_OUT: ${{ github.workspace }}/collected/gil.txt
         run: uv run --locked pytest -m "not freethreaded and not performance"
+
+      - name: Record selected tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: collected-gil
+          path: collected/gil.txt
+          retention-days: 1
+
+  performance:
+    name: performance tier (Python 3.14.7t)
+    # Relative thread-scaling timings are meaningless on a contended runner and
+    # are not a correctness signal, so the tier is not *executed* on the
+    # pull-request path. It is still collected there, so the coverage proof
+    # below stays complete on every event.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      UV_PYTHON: 3.14.7t
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install "$UV_PYTHON"
+
+      - name: Sync locked environment
+        run: uv sync --locked --all-groups
+
+      # Executed on main, nightly and on demand; collected only on pull
+      # requests, where a timing measurement of the runner must not block review.
+      - name: Scaling gate
+        env:
+          CMW_COLLECTED_OUT: ${{ github.workspace }}/collected/performance.txt
+          COLLECT_ONLY: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [ "$COLLECT_ONLY" = "true" ]; then
+            uv run --locked pytest -m performance --collect-only -q
+          else
+            uv run --locked pytest -m performance
+          fi
+
+      - name: Record selected tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: collected-performance
+          path: collected/performance.txt
+          retention-days: 1
+
+  coverage:
+    name: marker coverage
+    # Proves that the jobs above, between them, run every test. This replaces
+    # a static guard that re-derived coverage by parsing this workflow: that
+    # parser had to reimplement YAML, shell word-splitting and pytest's marker
+    # resolution, and review found six ways to fool it. Unioning what pytest
+    # itself selected cannot drift from what pytest does.
+    needs: [gates, gil-compatibility, performance]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      UV_PYTHON: 3.14.7t
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install "$UV_PYTHON"
+
+      - name: Sync locked environment
+        run: uv sync --locked --all-groups
+
+      - name: Download per-job manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: collected
+          pattern: collected-*
+          merge-multiple: true
+
+      - name: Every test is claimed by some invocation
+        env:
+          CMW_COLLECTED_OUT: ${{ github.workspace }}/full/all.txt
+        run: |
+          uv run --locked pytest --collect-only -q > /dev/null
+          uv run --locked python - <<'PY'
+          import pathlib
+          import sys
+
+          full = set(pathlib.Path("full/all.txt").read_text().splitlines())
+          manifests = sorted(pathlib.Path("collected").glob("*.txt"))
+          if not manifests:
+              sys.exit("no per-job manifests were downloaded")
+
+          covered: set[str] = set()
+          for manifest in manifests:
+              selected = set(manifest.read_text().splitlines())
+              covered |= selected
+              print(f"{manifest.name}: {len(selected)} selected")
+
+          print(f"suite: {len(full)}; union of CI invocations: {len(covered)}")
+          missing = sorted(full - covered)
+          if missing:
+              print("tests that no CI invocation collects:")
+              for node_id in missing:
+                  print(f"  {node_id}")
+              sys.exit(1)
+          print("every test is claimed by at least one CI invocation")
+          PY

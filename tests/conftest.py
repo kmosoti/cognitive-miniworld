@@ -1,6 +1,8 @@
 """Canonical shared test fixtures, including the MW-004 world."""
 
+import os
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
@@ -169,3 +171,26 @@ def make_action() -> Callable[..., ActionProposal]:
         )
 
     return factory
+
+
+def pytest_collection_finish(session: pytest.Session) -> None:
+    """Record the node ids this invocation actually selected, when asked.
+
+    CI proves that every test is claimed by some job by unioning these
+    manifests and comparing them against an unfiltered collection.  Writing the
+    ids from pytest's own finished selection is what makes that proof exact: it
+    uses pytest's marker resolution rather than re-deriving it from the
+    workflow, so marker expressions, parametrised marks, class and module
+    marks, and deselection are all accounted for by construction.
+
+    A no-op unless ``CMW_COLLECTED_OUT`` is set, so local runs are unaffected.
+    Ids are sorted, because a manifest is compared and must not depend on
+    collection order.
+    """
+    destination = os.environ.get("CMW_COLLECTED_OUT")
+    if not destination:
+        return
+    path = Path(destination)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    node_ids = sorted(item.nodeid for item in session.items)
+    path.write_text("\n".join(node_ids) + "\n", encoding="utf-8")
