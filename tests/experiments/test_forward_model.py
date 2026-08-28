@@ -157,6 +157,29 @@ def test_confirmatory_configuration_is_the_frozen_adr_022_design() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("field", "wrong_type_value"),
+    (
+        ("schema_version", True),
+        ("horizon_ticks", float(HORIZON_TICKS)),
+        ("delayed_safety_threshold", int(DELAYED_SAFETY_THRESHOLD)),
+    ),
+)
+def test_configuration_rejects_type_equivalent_values(
+    field: str,
+    wrong_type_value: object,
+) -> None:
+    canonical = ForwardModelEvaluationConfig.confirmatory()
+    values = {
+        item.name: getattr(canonical, item.name)
+        for item in msgspec.structs.fields(ForwardModelEvaluationConfig)
+    }
+    values[field] = wrong_type_value
+
+    with pytest.raises(ValueError, match=field):
+        ForwardModelEvaluationConfig(**values)
+
+
 @pytest.mark.smoke
 def test_smoke_gate_is_deterministic_adapts_and_beats_both_baselines() -> None:
     first = evaluate_forward_model_tier("smoke")
@@ -203,6 +226,27 @@ def test_result_rejects_internally_consistent_but_noncanonical_evidence() -> Non
 
     with pytest.raises(ValueError, match="frozen traces"):
         msgspec.structs.replace(result, transition_evidence=(changed,))
+
+
+def test_encoder_revalidates_exact_types_across_the_evidence_graph() -> None:
+    result = evaluate_forward_model_tier("unit")
+    object.__setattr__(result.configuration, "horizon_ticks", float(HORIZON_TICKS))
+    with pytest.raises(ValueError, match="horizon_ticks"):
+        encode_forward_model_result(result)
+
+    result = evaluate_forward_model_tier("unit")
+    object.__setattr__(result.transition_evidence[0], "schema_version", True)
+    with pytest.raises(ValueError, match="schema_version"):
+        encode_forward_model_result(result)
+
+    result = evaluate_forward_model_tier("unit")
+    object.__setattr__(
+        result,
+        "max_adaptation_ticks",
+        float(result.max_adaptation_ticks),
+    )
+    with pytest.raises(ValueError, match="max_adaptation_ticks"):
+        encode_forward_model_result(result)
 
 
 def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> None:

@@ -111,9 +111,9 @@ def _sha256(value: object, field: str) -> str:
 
 
 def _tier(value: object) -> EvaluationTier:
-    if value not in SUPPORTED_TIERS:
+    if type(value) is not str or value not in SUPPORTED_TIERS:
         raise ValueError("tier must be one of: unit, smoke, ci, benchmark")
-    return cast(EvaluationTier, value)
+    return value
 
 
 class ForwardModelEvaluationConfig(
@@ -143,14 +143,23 @@ class ForwardModelEvaluationConfig(
     minimum_decision_effect: float
 
     def __post_init__(self) -> None:
-        if self.schema_version != FORWARD_MODEL_SCHEMA_VERSION:
+        if (
+            type(self.schema_version) is not int
+            or self.schema_version != FORWARD_MODEL_SCHEMA_VERSION
+        ):
             raise ValueError(
                 f"schema_version must be {FORWARD_MODEL_SCHEMA_VERSION}"
             )
         selected_tier = _tier(self.tier)
-        if self.mode not in {CONFIRMATORY_MODE, NON_CONFIRMATORY_MODE}:
+        if type(self.mode) is not str or self.mode not in {
+            CONFIRMATORY_MODE,
+            NON_CONFIRMATORY_MODE,
+        }:
             raise ValueError("mode must be confirmatory or non-confirmatory")
-        if self.seeds != _SEEDS_BY_TIER[selected_tier]:
+        if (
+            type(self.seeds) is not tuple
+            or self.seeds != _SEEDS_BY_TIER[selected_tier]
+        ):
             raise ValueError("seeds must exactly match the selected tier")
         for index, seed in enumerate(self.seeds):
             _seed(seed, f"seeds[{index}]")
@@ -170,7 +179,8 @@ class ForwardModelEvaluationConfig(
             "minimum_decision_effect": MINIMUM_DECISION_EFFECT,
         }
         for field, expected_value in expected.items():
-            if getattr(self, field) != expected_value:
+            actual = getattr(self, field)
+            if type(actual) is not type(expected_value) or actual != expected_value:
                 raise ValueError(f"{field} must be {expected_value!r}")
         if self.mode == CONFIRMATORY_MODE and selected_tier != CONFIRMATORY_TIER:
             raise ValueError("confirmatory mode requires the benchmark tier")
@@ -238,7 +248,10 @@ class TransitionShiftEvidence(
     adaptation_ticks: int
 
     def __post_init__(self) -> None:
-        if self.schema_version != FORWARD_MODEL_SCHEMA_VERSION:
+        if (
+            type(self.schema_version) is not int
+            or self.schema_version != FORWARD_MODEL_SCHEMA_VERSION
+        ):
             raise ValueError(
                 f"schema_version must be {FORWARD_MODEL_SCHEMA_VERSION}"
             )
@@ -286,7 +299,10 @@ class DelayedDecisionEvidence(
     viability_improvement: float
 
     def __post_init__(self) -> None:
-        if self.schema_version != FORWARD_MODEL_SCHEMA_VERSION:
+        if (
+            type(self.schema_version) is not int
+            or self.schema_version != FORWARD_MODEL_SCHEMA_VERSION
+        ):
             raise ValueError(
                 f"schema_version must be {FORWARD_MODEL_SCHEMA_VERSION}"
             )
@@ -343,7 +359,10 @@ class ForwardModelEvaluationResult(
     passed: bool
 
     def __post_init__(self) -> None:
-        if self.schema_version != FORWARD_MODEL_SCHEMA_VERSION:
+        if (
+            type(self.schema_version) is not int
+            or self.schema_version != FORWARD_MODEL_SCHEMA_VERSION
+        ):
             raise ValueError(
                 f"schema_version must be {FORWARD_MODEL_SCHEMA_VERSION}"
             )
@@ -364,6 +383,10 @@ class ForwardModelEvaluationResult(
             raise TypeError(
                 "delayed_evidence must contain DelayedDecisionEvidence values"
             )
+        for item in self.transition_evidence:
+            item.__post_init__()
+        for item in self.delayed_evidence:
+            item.__post_init__()
         expected_transition = tuple(
             _transition_shift_evidence(seed, self.configuration)
             for seed in self.configuration.seeds
@@ -392,13 +415,25 @@ class ForwardModelEvaluationResult(
             item.adaptation_ticks for item in self.transition_evidence
         )
         expected_decision = math.fsum(decision_effects) / len(decision_effects)
-        if self.mean_pre_shift_improvement != expected_pre:
+        if (
+            type(self.mean_pre_shift_improvement) is not float
+            or self.mean_pre_shift_improvement != expected_pre
+        ):
             raise ValueError("mean_pre_shift_improvement does not match evidence")
-        if self.mean_post_shift_improvement != expected_post:
+        if (
+            type(self.mean_post_shift_improvement) is not float
+            or self.mean_post_shift_improvement != expected_post
+        ):
             raise ValueError("mean_post_shift_improvement does not match evidence")
-        if self.max_adaptation_ticks != expected_adaptation:
+        if (
+            type(self.max_adaptation_ticks) is not int
+            or self.max_adaptation_ticks != expected_adaptation
+        ):
             raise ValueError("max_adaptation_ticks does not match evidence")
-        if self.mean_decision_improvement != expected_decision:
+        if (
+            type(self.mean_decision_improvement) is not float
+            or self.mean_decision_improvement != expected_decision
+        ):
             raise ValueError("mean_decision_improvement does not match evidence")
         expected_passed = (
             self.mean_pre_shift_improvement

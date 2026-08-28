@@ -23,6 +23,7 @@ _LEARNED_PRODUCER: Final = "cmw.agents.learned-tabular-forward-model"
 _MAX_STATES: Final = 64
 _MAX_ACTIONS: Final = 16
 _MAX_HORIZON_TICKS: Final = 10_000
+_MAX_SOURCE_EVENT_IDS: Final = _MAX_HORIZON_TICKS
 
 
 def _finite(value: object, field: str) -> float:
@@ -47,6 +48,14 @@ def _text(value: object, field: str) -> str:
     if type(value) is not str or not value:
         raise ValueError(f"{field} must be a non-empty string")
     return value
+
+
+def _bounded_source_event_ids(
+    *groups: tuple[str, ...],
+) -> tuple[str, ...]:
+    if sum(len(group) for group in groups) > _MAX_SOURCE_EVENT_IDS:
+        raise ValueError("forward-model provenance exceeds its source-event limit")
+    return tuple(sorted({event_id for group in groups for event_id in group}))
 
 
 def _horizon(value: object) -> int:
@@ -246,16 +255,10 @@ def _prediction(
     if entropy == 0.0:
         entropy = 0.0
     horizon_tick = belief.revision_tick + horizon_ticks
-    source_event_ids = tuple(
-        sorted(
-            set(
-                (
-                    *learned_source_event_ids,
-                    *belief.provenance.source_event_ids,
-                    *proposal.provenance.source_event_ids,
-                )
-            )
-        )
+    source_event_ids = _bounded_source_event_ids(
+        learned_source_event_ids,
+        belief.provenance.source_event_ids,
+        proposal.provenance.source_event_ids,
     )
     return PredictionDistribution(
         schema_version=CURRENT_SCHEMA_VERSION,
@@ -400,9 +403,13 @@ class LearnedTabularForwardModel:
             )
             if keys != _transition_keys(states, actions):
                 raise ValueError("counts must form a complete canonical table")
-        if type(self.source_event_ids) is not tuple or any(
-            type(item) is not str or not item for item in self.source_event_ids
-        ):
+        if type(self.source_event_ids) is not tuple:
+            raise TypeError("source_event_ids must be a tuple")
+        if len(self.source_event_ids) > _MAX_SOURCE_EVENT_IDS:
+            raise ValueError(
+                "source_event_ids exceed the forward-model provenance limit"
+            )
+        if any(type(item) is not str or not item for item in self.source_event_ids):
             raise TypeError("source_event_ids must contain non-empty strings")
         if self.source_event_ids != tuple(sorted(set(self.source_event_ids))):
             raise ValueError("source_event_ids must be sorted and unique")
@@ -502,17 +509,11 @@ class LearnedTabularForwardModel:
                     count=count,
                 )
             )
-        source_event_ids = tuple(
-            sorted(
-                set(
-                    (
-                        *self.source_event_ids,
-                        *before.provenance.source_event_ids,
-                        *proposal.provenance.source_event_ids,
-                        *after.provenance.source_event_ids,
-                    )
-                )
-            )
+        source_event_ids = _bounded_source_event_ids(
+            self.source_event_ids,
+            before.provenance.source_event_ids,
+            proposal.provenance.source_event_ids,
+            after.provenance.source_event_ids,
         )
         return replace(
             self,

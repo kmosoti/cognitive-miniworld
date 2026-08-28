@@ -6,6 +6,7 @@ import math
 
 import pytest
 
+import cmw.agents.forward_model as forward_model_module
 from cmw.agents import (
     KnownTabularForwardModel,
     KnownTransition,
@@ -258,3 +259,29 @@ def test_known_model_enforces_the_adr_022_action_bound() -> None:
                 for target in STATES
             ),
         )
+
+
+def test_forward_model_rejects_provenance_before_union(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = LearnedTabularForwardModel(states=STATES, actions=("flip",))
+    before = _belief(1.0, 0, "before")
+    after = _belief(0.0, 1, "after")
+    selected = proposal("flip", "proposal:flip")
+
+    def unexpected_sorted(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("provenance rejection happened after the union")
+
+    monkeypatch.setattr(forward_model_module, "_MAX_SOURCE_EVENT_IDS", 0)
+    monkeypatch.setattr(
+        forward_model_module,
+        "sorted",
+        unexpected_sorted,
+        raising=False,
+    )
+
+    with pytest.raises(ValueError, match="source-event limit"):
+        model.predict(before, selected)
+    with pytest.raises(ValueError, match="source-event limit"):
+        model.update(before, selected, after)

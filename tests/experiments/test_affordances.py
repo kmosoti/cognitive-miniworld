@@ -128,6 +128,25 @@ def test_encoder_revalidates_the_complete_affordance_evidence_graph() -> None:
     with pytest.raises(ValueError, match="lowercase SHA-256"):
         encode_affordance_result(result)
 
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(result.evidence[0], "schema_version", True)
+    with pytest.raises(ValueError, match="schema_version"):
+        encode_affordance_result(result)
+
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(result, "candidate_feasible_action_recall", 1)
+    with pytest.raises(ValueError, match="candidate_feasible_action_recall"):
+        encode_affordance_result(result)
+
+    result = evaluate_affordance_generator_tier("unit")
+    object.__setattr__(
+        result,
+        "minimum_incomplete_candidate_count",
+        float(result.minimum_incomplete_candidate_count),
+    )
+    with pytest.raises(ValueError, match="minimum_incomplete_candidate_count"):
+        encode_affordance_result(result)
+
     for field in (
         "generation_failure_observed",
         "selection_failure_observed",
@@ -156,6 +175,19 @@ def test_configuration_cannot_relabel_or_shrink_the_confirmatory_gate() -> None:
     values["seeds"] = (BENCHMARK_SEEDS[0],)
     with pytest.raises(ValueError, match="selected tier"):
         AffordanceCoverageEvaluationConfig(**values)
+
+    for field, wrong_type_value in (
+        ("schema_version", True),
+        ("minimum_feasible_action_recall", 1),
+        ("minimum_incomplete_candidates", 2.0),
+    ):
+        values = {
+            item.name: getattr(canonical, item.name)
+            for item in msgspec.structs.fields(AffordanceCoverageEvaluationConfig)
+        }
+        values[field] = wrong_type_value
+        with pytest.raises(ValueError, match=field):
+            AffordanceCoverageEvaluationConfig(**values)
 
     with pytest.raises(ValueError, match="confirmatory"):
         AffordanceCoverageEvaluationConfig.for_tier("benchmark")

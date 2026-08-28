@@ -150,9 +150,43 @@ def test_encoder_revalidates_the_complete_disagreement_evidence_graph() -> None:
         encode_error_disagreement_result(result)
 
     result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result.evidence[0], "schema_version", True)
+    with pytest.raises(ValueError, match="schema_version"):
+        encode_error_disagreement_result(result)
+
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result, "typed_credit_precision", 1)
+    with pytest.raises(ValueError, match="typed_credit_precision"):
+        encode_error_disagreement_result(result)
+
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result, "maximum_typed_unnecessary_control_actions", 0.0)
+    with pytest.raises(
+        ValueError,
+        match="maximum_typed_unnecessary_control_actions",
+    ):
+        encode_error_disagreement_result(result)
+
+    result = evaluate_error_disagreement_tier("unit")
     object.__setattr__(result, "passed", 1)
     with pytest.raises(TypeError, match="passed must be a bool"):
         encode_error_disagreement_result(result)
+
+
+def test_configuration_rejects_type_equivalent_values() -> None:
+    canonical = ErrorDisagreementEvaluationConfig.confirmatory()
+    for field, wrong_type_value in (
+        ("schema_version", True),
+        ("minimum_viability_auc_effect", 0),
+        ("max_typed_unnecessary_control_actions", 0.0),
+    ):
+        values = {
+            item.name: getattr(canonical, item.name)
+            for item in msgspec.structs.fields(ErrorDisagreementEvaluationConfig)
+        }
+        values[field] = wrong_type_value
+        with pytest.raises(ValueError, match=field):
+            ErrorDisagreementEvaluationConfig(**values)
 
 
 def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> None:
