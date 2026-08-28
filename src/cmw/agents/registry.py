@@ -10,6 +10,7 @@ from .curiosity import (
     PredictionErrorCuriosityBaseline,
     RandomCuriosityBaseline,
 )
+from .errors import ScalarAbsoluteErrorBaseline
 from .estimation import LastObservationEstimator
 from .reactive import ReactiveFixedSetpointController
 
@@ -28,6 +29,7 @@ type BaselineImplementation = (
     | LastObservationEstimator
     | RandomCuriosityBaseline
     | PredictionErrorCuriosityBaseline
+    | ScalarAbsoluteErrorBaseline
 )
 
 
@@ -136,6 +138,8 @@ def resolve_baseline(baseline_id: str) -> BaselineImplementation:
             return RandomCuriosityBaseline()
         case "cmw:baseline/prediction-error-curiosity":
             return PredictionErrorCuriosityBaseline()
+        case "cmw:baseline/scalar-error":
+            return ScalarAbsoluteErrorBaseline()
         case _:
             raise KeyError(baseline_id)
 
