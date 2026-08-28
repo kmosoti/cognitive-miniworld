@@ -128,6 +128,16 @@ def test_encoder_revalidates_the_complete_affordance_evidence_graph() -> None:
     with pytest.raises(ValueError, match="lowercase SHA-256"):
         encode_affordance_result(result)
 
+    for field in (
+        "generation_failure_observed",
+        "selection_failure_observed",
+        "passed",
+    ):
+        result = evaluate_affordance_generator_tier("unit")
+        object.__setattr__(result, field, 1)
+        with pytest.raises(TypeError, match=rf"{field} must be a bool"):
+            encode_affordance_result(result)
+
 
 def test_configuration_cannot_relabel_or_shrink_the_confirmatory_gate() -> None:
     canonical = AffordanceCoverageEvaluationConfig.confirmatory()

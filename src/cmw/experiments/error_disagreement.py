@@ -401,8 +401,10 @@ class ErrorDisagreementEvaluationResult(
             raise ValueError(
                 "minimum_scalar_unnecessary_control_actions must be recomputed"
             )
+        if type(self.passed) is not bool:
+            raise TypeError("passed must be a bool")
         expected_passed = _passes(self.configuration, self.evidence)
-        if self.passed != expected_passed:
+        if self.passed is not expected_passed:
             raise ValueError("passed must match the preregistered disagreement gate")
 
 

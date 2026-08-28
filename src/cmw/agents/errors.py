@@ -307,6 +307,15 @@ class TypedErrorDecomposer:
             + sum(len(item.features) for item in before.hypotheses)
             + sum(len(item.features) for item in after.hypotheses)
             + sum(len(observation.values) for observation in observations)
+            + len(prediction.provenance.source_event_ids)
+            + len(before.provenance.source_event_ids)
+            + len(after.provenance.source_event_ids)
+            + len(reference.provenance.source_event_ids)
+            + len(observations)
+            + sum(
+                len(observation.provenance.source_event_ids)
+                for observation in observations
+            )
         )
         if work > _MAX_WORK:
             raise ValueError("error decomposition exceeds its deterministic work limit")

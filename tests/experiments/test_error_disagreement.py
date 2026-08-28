@@ -149,6 +149,11 @@ def test_encoder_revalidates_the_complete_disagreement_evidence_graph() -> None:
     with pytest.raises(ValueError, match="lowercase SHA-256"):
         encode_error_disagreement_result(result)
 
+    result = evaluate_error_disagreement_tier("unit")
+    object.__setattr__(result, "passed", 1)
+    with pytest.raises(TypeError, match="passed must be a bool"):
+        encode_error_disagreement_result(result)
+
 
 def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> None:
     for struct_type in (

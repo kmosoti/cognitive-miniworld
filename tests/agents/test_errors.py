@@ -466,3 +466,30 @@ def test_decomposer_rejects_oversized_reference_before_horizon_scan(
             oversized,
             _observations(40.0, 1),
         )
+
+
+def test_decomposer_counts_provenance_before_source_union(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    before = _belief(40.0, 0, "before")
+    after = _belief(40.0, 1, "after")
+
+    def unexpected_source_union(*args: object, **kwargs: object) -> tuple[str, ...]:
+        del args, kwargs
+        raise AssertionError("work rejection happened after the provenance scan")
+
+    monkeypatch.setattr(error_module, "_MAX_WORK", 7)
+    monkeypatch.setattr(
+        error_module,
+        "_source_event_ids",
+        unexpected_source_union,
+    )
+
+    with pytest.raises(ValueError, match="deterministic work limit"):
+        TypedErrorDecomposer().decompose(
+            _prediction(40.0, before, 1),
+            before,
+            after,
+            _reference(80.0, 1),
+            _observations(40.0, 1),
+        )

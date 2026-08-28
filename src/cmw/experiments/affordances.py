@@ -319,10 +319,17 @@ class AffordanceCoverageEvaluationResult(
             raise ValueError(
                 "minimum_incomplete_candidate_count must be recomputed from evidence"
             )
+        for field in (
+            "generation_failure_observed",
+            "selection_failure_observed",
+            "passed",
+        ):
+            if type(getattr(self, field)) is not bool:
+                raise TypeError(f"{field} must be a bool")
         generation_failure, selection_failure = _failure_observations()
-        if self.generation_failure_observed != generation_failure:
+        if self.generation_failure_observed is not generation_failure:
             raise ValueError("generation_failure_observed must match its fixture")
-        if self.selection_failure_observed != selection_failure:
+        if self.selection_failure_observed is not selection_failure:
             raise ValueError("selection_failure_observed must match its fixture")
         expected_passed = (
             self.candidate_feasible_action_recall
@@ -336,7 +343,7 @@ class AffordanceCoverageEvaluationResult(
             and self.generation_failure_observed
             and self.selection_failure_observed
         )
-        if self.passed != expected_passed:
+        if self.passed is not expected_passed:
             raise ValueError("passed must match the preregistered affordance gate")
 
 
