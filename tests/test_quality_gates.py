@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "pyproject.toml"
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
+TESTS_ROOT = ROOT / "tests"
 
 FALSIFIABLE = '''
 from hypothesis import given, strategies as st
@@ -161,6 +162,88 @@ def _logical_lines(text: str) -> tuple[str, ...]:
     return tuple(joined)
 
 
+SHELL_SEPARATORS = ("&&", "||", ";", "|")
+
+# Tokens that may precede the real command word without being it.
+COMMAND_WRAPPERS = frozenset({"uv", "uvx", "run", "exec", "env", "python", "python3"})
+
+
+def _simple_commands(line: str) -> tuple[list[str], ...]:
+    """Split one shell line into simple commands on `&&`, `||`, `;` and `|`."""
+    tokens = shlex.split(line, comments=True)
+    commands: list[list[str]] = [[]]
+    for token in tokens:
+        if token in SHELL_SEPARATORS:
+            commands.append([])
+            continue
+        commands[-1].append(token)
+    return tuple(command for command in commands if command)
+
+
+def _pytest_arguments(command: list[str]) -> list[str] | None:
+    """Return pytest's arguments when ``command`` actually executes pytest.
+
+    A bare `pytest` token is not enough: `echo pytest` contains one and would
+    otherwise be recorded as an unrestricted invocation, claiming every marker.
+    Leading wrappers (`uv run --locked ...`, `python -m ...`) and their options
+    are skipped; the first remaining token must be the command word `pytest`.
+    """
+    index = 0
+    while index < len(command):
+        token = command[index]
+        if token.startswith("-") or token in COMMAND_WRAPPERS:
+            index += 1
+            continue
+        return command[index + 1 :] if token == "pytest" else None
+    return None
+
+
+def registered_marker_combinations() -> tuple[frozenset[str], ...]:
+    """Marker sets that actually occur on tests, restricted to registered names.
+
+    Evaluating each marker in isolation is unsound: the only `performance` test
+    is also `freethreaded`, so an expression like `performance and not
+    freethreaded` would satisfy a synthetic performance-only test while
+    collecting nothing real.  Coverage must be judged against combinations that
+    exist.  Both decorator marks and module-level `pytestmark` are read.
+    """
+    registered = set(registered_markers())
+    combinations: set[frozenset[str]] = set()
+    for path in sorted(TESTS_ROOT.rglob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        module_marks: set[str] = set()
+        for node in tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if not any(
+                isinstance(t, ast.Name) and t.id == "pytestmark" for t in node.targets
+            ):
+                continue
+            values = (
+                node.value.elts
+                if isinstance(node.value, (ast.List, ast.Tuple))
+                else [node.value]
+            )
+            for value in values:
+                current = value.func if isinstance(value, ast.Call) else value
+                if isinstance(current, ast.Attribute) and current.attr in registered:
+                    module_marks.add(current.attr)
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if not node.name.startswith("test_"):
+                continue
+            marks = set(module_marks)
+            for decorator in node.decorator_list:
+                current = (
+                    decorator.func if isinstance(decorator, ast.Call) else decorator
+                )
+                if isinstance(current, ast.Attribute) and current.attr in registered:
+                    marks.add(current.attr)
+            combinations.add(frozenset(marks))
+    return tuple(sorted(combinations, key=lambda s: tuple(sorted(s))))
+
+
 def workflow_marker_expressions() -> tuple[str | None, ...]:
     """Return the ``-m`` expression of every pytest invocation in the workflow.
 
@@ -170,42 +253,43 @@ def workflow_marker_expressions() -> tuple[str | None, ...]:
     invocation with no ``-m`` expression, which selects every marker.
 
     Discovery is restricted to ``run:`` content so that YAML metadata mentioning
-    pytest cannot be misread as an unrestricted invocation.  Backslash
-    continuations are joined first, so a command wrapped across lines cannot
-    over-claim its markers either.
+    pytest cannot be misread as an unrestricted invocation; folded blocks are
+    joined; and ``pytest`` must occupy the command position, so ``echo pytest``
+    is not scored.  Each of those would otherwise register an unrestricted
+    invocation and silently claim every marker.
     """
     expressions: list[str | None] = []
     for block in _run_command_blocks(WORKFLOW.read_text(encoding="utf-8")):
         for line in _logical_lines(block):
             if not line or line.startswith("#"):
                 continue
-            tokens = shlex.split(line, comments=True)
-            if "pytest" not in tokens:
-                continue
-            arguments = tokens[tokens.index("pytest") + 1 :]
-            if "-m" not in arguments:
-                expressions.append(None)
-                continue
-            expressions.append(arguments[arguments.index("-m") + 1])
+            for simple in _simple_commands(line):
+                arguments = _pytest_arguments(simple)
+                if arguments is None:
+                    continue
+                if "-m" not in arguments:
+                    expressions.append(None)
+                    continue
+                expressions.append(arguments[arguments.index("-m") + 1])
     return tuple(expressions)
 
 
-def _evaluate(node: ast.expr, marker: str) -> bool:
+def _evaluate(node: ast.expr, marks: frozenset[str]) -> bool:
     if isinstance(node, ast.Name):
-        return node.id == marker
+        return node.id in marks
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-        return not _evaluate(node.operand, marker)
+        return not _evaluate(node.operand, marks)
     if isinstance(node, ast.BoolOp):
-        outcomes = [_evaluate(value, marker) for value in node.values]
+        outcomes = [_evaluate(value, marks) for value in node.values]
         return all(outcomes) if isinstance(node.op, ast.And) else any(outcomes)
     raise AssertionError(f"unsupported marker expression: {ast.dump(node)}")
 
 
-def selects(expression: str | None, marker: str) -> bool:
-    """Whether an invocation collects a test carrying exactly ``marker``."""
+def selects(expression: str | None, marks: frozenset[str]) -> bool:
+    """Whether an invocation collects a test carrying exactly ``marks``."""
     if expression is None:
         return True
-    return _evaluate(ast.parse(expression, mode="eval").body, marker)
+    return _evaluate(ast.parse(expression, mode="eval").body, marks)
 
 
 def test_every_registered_marker_is_claimed_by_a_ci_invocation() -> None:
@@ -213,10 +297,17 @@ def test_every_registered_marker_is_claimed_by_a_ci_invocation() -> None:
     expressions = workflow_marker_expressions()
     assert expressions, f"no pytest invocation found in {WORKFLOW}"
 
+    combinations = registered_marker_combinations()
     unclaimed = [
         marker
         for marker in registered_markers()
-        if not any(selects(expression, marker) for expression in expressions)
+        if any(marker in marks for marks in combinations)
+        and not any(
+            selects(expression, marks)
+            for marks in combinations
+            if marker in marks
+            for expression in expressions
+        )
     ]
 
     assert not unclaimed, (
