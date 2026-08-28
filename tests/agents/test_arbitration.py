@@ -331,6 +331,33 @@ def test_choice_entropy_is_normalized_for_more_than_two_candidates() -> None:
     assert result.decision.uncertainty.entropy == pytest.approx(1.0)
 
 
+def test_zero_probability_outcomes_do_not_change_information_value() -> None:
+    compact = _proposal("compact", reversible=True)
+    padded = _proposal("padded", reversible=True)
+
+    result = _arbitrate(
+        (compact, padded),
+        (
+            _prediction(
+                compact,
+                (("safe", 0.5, True), ("unsafe", 0.5, False)),
+            ),
+            _prediction(
+                padded,
+                (
+                    ("safe", 0.5, True),
+                    ("unsafe", 0.5, False),
+                    ("zero", 0.0, False),
+                ),
+            ),
+        ),
+    )
+
+    by_action = {value.action: value for value in result.values}
+    assert by_action["compact"].information_value == pytest.approx(1.0)
+    assert by_action["padded"].information_value == pytest.approx(1.0)
+
+
 @pytest.mark.parametrize(
     ("field", "wrong_value"),
     (

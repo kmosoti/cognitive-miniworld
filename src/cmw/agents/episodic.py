@@ -874,6 +874,8 @@ class EpisodicRecord(
             f"{_PRODUCER}:{self.trace.episode_id}:{self.trace.tick}"
         ):
             raise ValueError("trace_id must be the canonical episode/tick identifier")
+        if self.trace.tick != belief.revision_tick:
+            raise ValueError("trace tick must match the recorded belief revision tick")
         if self.trace.belief_id != belief.belief_id:
             raise ValueError("trace must identify the recorded belief")
         if self.trace.reference_ids != tuple(

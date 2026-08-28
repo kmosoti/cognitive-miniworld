@@ -276,6 +276,21 @@ def test_record_preserves_the_complete_typed_loop_and_canonical_provenance() -> 
     assert encode_episodic_record(record) == encode_episodic_record(record)
 
 
+def test_independent_record_rejects_trace_tick_outside_recorded_belief() -> None:
+    record = _record(EpisodicRecorder(capacity=2), 7).records[0]
+    incorrect_tick = record.trace.tick + 1
+    trace = msgspec.structs.replace(
+        record.trace,
+        tick=incorrect_tick,
+        trace_id=(
+            f"{episodic_module._PRODUCER}:{record.trace.episode_id}:{incorrect_tick}"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="trace tick"):
+        msgspec.structs.replace(record, trace=trace)
+
+
 def test_retrieval_ranks_exact_current_context_and_explains_partial_history() -> None:
     memory = _record(EpisodicRecorder(capacity=4), 0, regime="old", action="wait")
     memory = _record(memory, 2, regime="current", action="adapt")

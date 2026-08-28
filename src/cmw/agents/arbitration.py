@@ -714,14 +714,17 @@ def _reference_violation_probability(
 
 
 def _normalized_entropy(outcomes: tuple[PredictedOutcome, ...]) -> float:
-    if len(outcomes) <= 1:
+    positive_probabilities = tuple(
+        outcome.probability for outcome in outcomes if outcome.probability > 0.0
+    )
+    if len(positive_probabilities) <= 1:
         return 0.0
     entropy = -math.fsum(
-        outcome.probability * math.log(outcome.probability)
-        for outcome in outcomes
-        if outcome.probability > 0.0
+        probability * math.log(probability) for probability in positive_probabilities
     )
-    return _canonical(min(1.0, max(0.0, entropy / math.log(len(outcomes)))))
+    return _canonical(
+        min(1.0, max(0.0, entropy / math.log(len(positive_probabilities))))
+    )
 
 
 def _fraction(value: int | float, available: int | float) -> float:
