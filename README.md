@@ -51,13 +51,14 @@ flowchart LR
     V --> D{Promote, revise, or kill}
 ```
 
-This topology is now executable for the Milestone 0 baseline/oracle
-qualification. Later candidate primitives enter through the same typed seams,
-one preregistered comparison at a time.
+This topology is executable for the Milestone 0 baseline/oracle qualification
+and the first core state-estimation comparison. Later candidate primitives
+enter through the same typed seams, one preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.7.0` completes the Milestone 0 experimental substrate:
+Package `0.8.0` retains the Milestone 0 substrate and adds the first core
+primitive:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -86,10 +87,18 @@ Package `0.7.0` completes the Milestone 0 experimental substrate:
 - `cmw.agents` supplies a reactive fixed-setpoint controller, last-observation
   estimator, and random and prediction-error curiosity baselines. A closed
   resolver maps every first-wave fixture to runnable ablations.
+- The exact `TabularStateEstimator` enumerates bounded finite hidden states,
+  fuses noisy or delayed public evidence into normalized `BeliefState`
+  posteriors, exposes calibrated marginals, and can reverse a strong stale
+  prior without evaluator access or mutable learning state.
 - `cmw.experiments` runs isolated serial or free-threaded paired episodes,
   materializes public stimuli without leaking evaluator schedules, confines the
   tractable demand-shift oracle to evaluation code, and rejects excessive work
   before compilation or worker creation.
+- The MW-010 evaluator binds paired hidden-Markov traces to deterministic
+  digests, compares binary Brier loss with last-observation and a perfect-truth
+  ceiling, and revalidates every trace, posterior, bootstrap continuation, and
+  stale-belief gate before encoding evidence.
 - The typed M0 gate revalidates run identities, replay hashes, event-derived
   metrics, safety counts, and the deterministic bootstrap before evidence is
   serialized.
@@ -100,6 +109,14 @@ The frozen 100-seed demand-shift comparison passed: baseline viability AUC
 `[0.039634146341463346, 0.039634146341463346]`, and zero irreversible errors
 in either arm. The minimum meaningful effect was `0.02`. This qualifies the
 laboratory; it does not validate a later cognitive primitive.
+
+The frozen 100-seed MW-010 comparison also passed: last-observation Brier loss
+`0.31725000000000003`, tabular-filter loss `0.1923106475855707`, and paired
+loss reduction `0.12493935241442927` with 95% interval
+`[0.11495202199223027, 0.13500205647747124]`, against a minimum meaningful
+effect of `0.02`. Every posterior normalized within
+`1.1102230246251565e-16`, and probability `0.99` on a stale value reversed
+after three contradictory ticks. See [the MW-010 verdict](docs/verdicts/MW-010.md).
 
 ## Try deterministic replay
 
