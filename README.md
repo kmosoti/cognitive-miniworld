@@ -52,13 +52,14 @@ flowchart LR
 ```
 
 This topology is executable for the Milestone 0 baseline/oracle qualification
-and the first core state-estimation comparison. Later candidate primitives
-enter through the same typed seams, one preregistered comparison at a time.
+and the first four core state-estimation, forward-model, typed-error, and
+affordance comparisons. Later candidate primitives enter through the same
+typed seams, one preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.8.0` retains the Milestone 0 substrate and adds the first core
-primitive:
+Package `0.11.0` retains the Milestone 0 substrate and adds the first four core
+primitives:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -91,6 +92,19 @@ primitive:
   fuses noisy or delayed public evidence into normalized `BeliefState`
   posteriors, exposes calibrated marginals, and can reverse a strong stale
   prior without evaluator access or mutable learning state.
+- `KnownTabularForwardModel` projects beliefs through complete declarative
+  action tables, while the separate immutable `LearnedTabularForwardModel`
+  revises recency-weighted transition counts from public
+  belief-action-belief evidence and emits the frozen `PredictionDistribution`
+  contract with horizon, provenance, and uncertainty.
+- `BeliefAffordanceGenerator` emits every declarative action template whose
+  boolean observable-precondition conjunction has positive belief support,
+  keeps missing evidence possible with explicit support bounds, and reports
+  generation failure separately from downstream selection failure.
+- `TypedErrorDecomposer` separately computes sensory, state-revision, control,
+  outcome, timing, binary agency, and learning-progress channels from public
+  forecasts, beliefs, references, and observations. The executable scalar
+  absolute-error collapse remains available only as an ablation baseline.
 - `cmw.experiments` runs isolated serial or free-threaded paired episodes,
   materializes public stimuli without leaking evaluator schedules, confines the
   tractable demand-shift oracle to evaluation code, and rejects excessive work
@@ -99,6 +113,16 @@ primitive:
   digests, compares binary Brier loss with last-observation and a perfect-truth
   ceiling, and revalidates every trace, posterior, bootstrap continuation, and
   stale-belief gate before encoding evidence.
+- The MW-011 evaluator scores action-conditioned predictions with categorical
+  Brier loss, checks recovery after an abrupt transition shift against identity
+  and frozen-model ablations, and confines its downstream prediction selector
+  to evaluation of the canonical delayed-poison fixture.
+- The MW-012 evaluator contrasts expected-but-undesirable with
+  unexpected-but-safe outcomes, measuring whether typed channels target model
+  and control updates more precisely than the scalar absolute-error ablation.
+- The MW-013 evaluator crosses every hidden truth assignment with every public
+  observation mask, compares feasible-best-action recall with a goal-only
+  baseline, and compares invalid-action rate with enumerating every action.
 - The typed M0 gate revalidates run identities, replay hashes, event-derived
   metrics, safety counts, and the deterministic bootstrap before evidence is
   serialized.
@@ -117,6 +141,31 @@ loss reduction `0.12493935241442927` with 95% interval
 effect of `0.02`. Every posterior normalized within
 `1.1102230246251565e-16`, and probability `0.99` on a stale value reversed
 after three contradictory ticks. See [the MW-010 verdict](docs/verdicts/MW-010.md).
+
+The frozen 100-seed MW-011 comparison passed: learned pre-shift Brier loss was
+`0.0666666030883789` versus identity loss `2.0`, and post-shift loss was
+`0.13320315678902273` versus frozen-model loss `2.0`. The active transition row
+recovered in two ticks, inside the four-tick bound. On `delayed_poison`, the
+prediction-selected policy raised viability AUC from `0.1273170731707317` to
+`0.14878048780487807`, a gain of `0.02146341463414636` for every paired seed,
+after training only on public prior-episode observations. See
+[the MW-011 verdict](docs/verdicts/MW-011.md).
+
+The frozen 100-seed MW-012 comparison passed: typed credit precision was `1.0`
+versus `0.5` for scalar absolute error, meeting the `0.5` improvement gate.
+Typed routing made no unnecessary model or control updates; scalar collapse
+over-routed one model update for every expected-but-undesirable fixture and one
+unnecessary control response for every unexpected-but-safe fixture. On the
+fixed control-cost safety adapter, typed viability AUC was `0.225` versus
+`0.175` for scalar routing, a `0.05000000000000002` gain. See
+[the MW-012 verdict](docs/verdicts/MW-012.md).
+
+The frozen 100-seed MW-013 comparison passed: feasible-best-action recall was
+`1.0` versus `0.5` for the goal-only baseline, while invalid-action rate fell
+from `0.375` for enumerate-all to `0.23076923076923075`, a reduction of
+`0.14423076923076922` above the `0.1` gate. Every incomplete-evidence case
+retained at least two candidates, and generation and selection failure remained
+distinct. See [the MW-013 verdict](docs/verdicts/MW-013.md).
 
 ## Try deterministic replay
 

@@ -887,8 +887,7 @@
       "contractQuestion": "What actions are currently possible?",
       "objective": "Generate action candidates before final arbitration.",
       "inputType": [
-        "cmw:contract/belief-state",
-        "cmw:contract/reference-trajectory"
+        "cmw:contract/belief-state"
       ],
       "outputType": [
         "cmw:contract/action-proposal"
@@ -2210,7 +2209,8 @@
       "safetyMetric": "cmw:metric/adaptation-half-life",
       "baseline": [
         "cmw:baseline/identity-forward-model",
-        "cmw:baseline/frozen-transition-model"
+        "cmw:baseline/frozen-transition-model",
+        "cmw:baseline/reactive-static"
       ],
       "failureMode": [
         "cmw:failure/model-staleness"
@@ -2277,7 +2277,7 @@
       "failureMode": [
         "cmw:failure/scalar-error-collapse"
       ],
-      "killTest": "Reject if typed errors do not improve update targeting or induce unnecessary control actions in expected-but-undesirable scenarios.",
+      "killTest": "Reject if typed errors do not improve update targeting, fail to trigger necessary control in expected-but-undesirable scenarios, or induce unnecessary control in unexpected-but-safe scenarios.",
       "isPartOf": "cmw:miniworld/viability-grid",
       "epistemicStatus": "cmw:status/project-hypothesis",
       "@id": "cmw:experiment/error-disagreement",
@@ -3074,7 +3074,7 @@
       "identifier": "MW-011",
       "label": "Forward model",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-010"
       ],
@@ -3097,7 +3097,7 @@
       "identifier": "MW-012",
       "label": "Typed error decomposer",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-011"
       ],
@@ -3120,7 +3120,7 @@
       "identifier": "MW-013",
       "label": "Affordance generator",
       "priority": "P0",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-010"
       ],

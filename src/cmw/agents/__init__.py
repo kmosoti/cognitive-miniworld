@@ -5,6 +5,13 @@ immutable observation/decision contracts.  In particular, no agent module has
 access to evaluator-owned world state.
 """
 
+from cmw.agents.affordances import (
+    AffordanceCycleObservation,
+    AffordanceGeneration,
+    AffordanceTemplate,
+    BeliefAffordanceGenerator,
+    observe_affordance_cycle,
+)
 from cmw.agents.curiosity import (
     PredictionErrorCuriosityBaseline,
     RandomCuriosityBaseline,
@@ -12,6 +19,11 @@ from cmw.agents.curiosity import (
     prediction_error_curiosity,
     random_curiosity,
     random_exploration,
+)
+from cmw.agents.errors import (
+    ScalarAbsoluteErrorBaseline,
+    TypedErrorDecomposer,
+    scalar_absolute_error,
 )
 from cmw.agents.estimation import (
     LastObservationEstimator,
@@ -21,6 +33,13 @@ from cmw.agents.estimation import (
     last_observation,
     last_observation_estimate,
     marginal_probability,
+)
+from cmw.agents.forward_model import (
+    KnownTabularForwardModel,
+    KnownTransition,
+    LearnedTabularForwardModel,
+    TabularPredictionState,
+    TransitionCount,
 )
 from cmw.agents.reactive import (
     ReactiveFixedSetpointController,
@@ -40,25 +59,38 @@ from cmw.agents.registry import (
 __all__ = [
     "BASELINE_COVERAGE",
     "BASELINE_COVERAGE_REGISTRY",
+    "AffordanceCycleObservation",
+    "AffordanceGeneration",
+    "AffordanceTemplate",
     "BaselineCoverage",
     "BaselineImplementation",
+    "BeliefAffordanceGenerator",
+    "KnownTabularForwardModel",
+    "KnownTransition",
     "LastObservationEstimator",
+    "LearnedTabularForwardModel",
     "PredictionErrorCuriosityBaseline",
     "RandomCuriosityBaseline",
     "RandomCuriosityResult",
     "ReactiveFixedSetpointController",
+    "ScalarAbsoluteErrorBaseline",
     "StateValue",
+    "TabularPredictionState",
     "TabularStateEstimator",
     "TabularStateVariable",
+    "TransitionCount",
+    "TypedErrorDecomposer",
     "baseline_coverage",
     "coverage_for",
     "last_observation",
     "last_observation_estimate",
     "marginal_probability",
+    "observe_affordance_cycle",
     "prediction_error_curiosity",
     "random_curiosity",
     "random_exploration",
     "reactive_fixed_setpoint",
     "resolve_baseline",
     "resolved_baselines_for",
+    "scalar_absolute_error",
 ]
