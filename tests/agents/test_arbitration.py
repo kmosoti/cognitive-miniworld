@@ -297,6 +297,19 @@ def test_budget_is_a_hard_eligibility_boundary() -> None:
     assert result.decision.action == "feasible"
 
 
+def test_resource_fraction_handles_unbounded_contract_integers() -> None:
+    huge = 10**1000
+    proposal = _proposal("huge", reversible=True, compute_units=huge)
+
+    result = _arbitrate(
+        (proposal,),
+        (_prediction(proposal, (("safe", 1.0, True),)),),
+        budget=_budget(compute_units=huge),
+    )
+
+    assert result.selected_value.cost == pytest.approx(0.5)
+
+
 def test_candidate_order_does_not_change_decision_or_score_order() -> None:
     consume = _proposal("consume", reversible=False)
     wait = _proposal("wait", reversible=True)
@@ -405,6 +418,25 @@ def test_low_level_mutation_is_revalidated_at_reuse_boundaries() -> None:
     object.__setattr__(result.values[0], "eligible", 1)
     with pytest.raises(TypeError, match="eligible must be a bool"):
         result.__post_init__()
+
+
+def test_independent_result_must_select_the_canonical_winner() -> None:
+    better = _proposal("better", reversible=True)
+    worse = _proposal("worse", reversible=True)
+    better_prediction = _prediction(better, (("safe", 1.0, True),))
+    worse_prediction = _prediction(worse, (("unsafe", 1.0, False),))
+    result = _arbitrate(
+        (better, worse),
+        (better_prediction, worse_prediction),
+    )
+    worse_only = _arbitrate((worse,), (worse_prediction,))
+
+    with pytest.raises(ValueError, match="canonical winning value"):
+        ArbitrationResult(
+            weights=result.weights,
+            decision=worse_only.decision,
+            values=result.values,
+        )
 
 
 def test_provenance_is_rejected_before_an_unbounded_union() -> None:

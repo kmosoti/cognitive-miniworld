@@ -120,6 +120,17 @@ class ActionValue:
             raise ValueError("only eligible irreversible actions may be dominated")
 
 
+def _selection_key(value: ActionValue) -> tuple[float, float, bool, float, str, str]:
+    return (
+        -value.total_value,
+        value.risk,
+        not value.reversible,
+        value.cost,
+        value.action,
+        value.proposal_id,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class ArbitrationResult:
     """Selected decision plus the complete, proposal-sorted score table."""
@@ -169,6 +180,11 @@ class ArbitrationResult:
         if len(selected) != 1 or not selected[0].eligible or selected[0].dominated:
             raise ValueError("decision must select one eligible undominated value")
         selected_value = selected[0]
+        selectable = tuple(
+            value for value in self.values if value.eligible and not value.dominated
+        )
+        if selected_value != min(selectable, key=_selection_key):
+            raise ValueError("decision must select the canonical winning value")
         if self.decision.action != selected_value.action:
             raise ValueError("decision action must match the selected value")
         expected_rationale = (
@@ -322,17 +338,7 @@ class ActionArbitrator:
         )
         if not selectable:
             raise ValueError("no candidate fits the resource budget")
-        selected = min(
-            selectable,
-            key=lambda item: (
-                -item.total_value,
-                item.risk,
-                not item.reversible,
-                item.cost,
-                item.action,
-                item.proposal_id,
-            ),
-        )
+        selected = min(selectable, key=_selection_key)
         selected_proposal = proposals_by_id[selected.proposal_id]
         selected_prediction = prepared.predictions[selected.proposal_id]
         confidence, entropy = _decision_uncertainty(
@@ -730,7 +736,9 @@ def _normalized_entropy(outcomes: tuple[PredictedOutcome, ...]) -> float:
 def _fraction(value: int | float, available: int | float) -> float:
     if available == 0:
         return 0.0 if value == 0 else 1.0
-    return min(1.0, float(value) / float(available))
+    if value >= available:
+        return 1.0
+    return value / available
 
 
 def _risk_fraction(value: float, limit: float) -> float:
