@@ -421,20 +421,33 @@ def test_retrieval_charges_complete_record_validation_work(
     memory = _record(EpisodicRecorder(capacity=4), 1)
     memory = _record(memory, 3)
     query = (_feature("cue", "shared"), _feature("regime", "current"))
-    expected_work = sum(
-        (
-            episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * record.unit_cost
-            + episodic_module._RETRIEVAL_COMPARISON_PASSES
-            * (len(query) + len(record.trace.context))
-        )
+    limit = 2
+    scan_work = sum(
+        episodic_module._RETRIEVAL_COMPARISON_PASSES
+        * (len(query) + len(record.trace.context))
         for record in memory.records
     )
+    validation_works = sorted(
+        (record.unit_cost for record in memory.records), reverse=True
+    )
+    construction_work = episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
+        validation_works[:limit]
+    )
 
-    assert memory.retrieve(query).unit_cost == expected_work
+    assert memory.retrieve(query, limit=limit).unit_cost == (
+        scan_work + construction_work
+    )
 
-    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", expected_work - 1)
-    with pytest.raises(ValueError, match=r"retrieval.*work limit"):
-        memory.retrieve(query)
+    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", scan_work - 1)
+    with pytest.raises(ValueError, match=r"retrieval.*scan limit"):
+        memory.retrieve(query, limit=limit)
+
+    monkeypatch.undo()
+    monkeypatch.setattr(
+        episodic_module, "_MAX_CONSTRUCTION_WORK", construction_work - 1
+    )
+    with pytest.raises(ValueError, match=r"retrieval.*construction limit"):
+        memory.retrieve(query, limit=limit)
 
 
 def test_match_rejects_evidence_length_before_scanning_entries() -> None:
@@ -541,10 +554,10 @@ def test_record_and_retrieval_reject_work_before_expensive_construction(
 
     def unexpected_feature(*args: object, **kwargs: object) -> object:
         del args, kwargs
-        raise AssertionError("work rejection occurred after leaf validation")
+        raise AssertionError("work rejection occurred after feature validation")
 
     monkeypatch.setattr(episodic_module, "_MAX_RECORD_WORK", 0)
-    monkeypatch.setattr(episodic_module, "_validate_feature", unexpected_feature)
+    monkeypatch.setattr(episodic_module, "_validate_features", unexpected_feature)
     with pytest.raises(ValueError, match="record-work limit"):
         EpisodicRecorder(capacity=2).record(
             episode_id="bounded-work",
@@ -562,7 +575,7 @@ def test_record_and_retrieval_reject_work_before_expensive_construction(
 
     monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", 0)
     monkeypatch.setattr(episodic_module, "_match_evidence", unexpected_match)
-    with pytest.raises(ValueError, match="deterministic work limit"):
+    with pytest.raises(ValueError, match="deterministic scan limit"):
         memory.retrieve((_feature("cue", "shared"),))
 
 
@@ -576,7 +589,7 @@ def test_exact_types_and_mutated_nested_evidence_are_revalidated() -> None:
     memory = _record(EpisodicRecorder(capacity=2), 0)
     retrieval = memory.retrieve((_feature("cue", "shared"),))
     object.__setattr__(retrieval.matches[0].evidence[0], "relation", "conflict")
-    with pytest.raises(ValueError, match="relation"):
+    with pytest.raises(ValueError, match="recomputed"):
         encode_episodic_retrieval(retrieval)
 
     memory = _record(EpisodicRecorder(capacity=2), 0)
