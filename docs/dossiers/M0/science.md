@@ -112,10 +112,11 @@ The gate passed. The paired effect is approximately `1.98×` the minimum
 meaningful effect. Because the difference was identical on every seed, every
 bootstrap resample had the same mean and the interval has zero width.
 
-That zero width should be read narrowly. It establishes exact repeatability of
-the paired contrast under this fixture and policy pair. It does not estimate
-uncertainty over other fixtures, scenario parameters, controller families, or
-real-world environments.
+That zero width should be read narrowly. It reports no empirical variation
+among the 100 observed per-seed effects; it does not itself establish rerun
+repeatability. Replay and serial/worker equivalence support repeatability
+separately. The interval also does not estimate uncertainty over other fixtures,
+scenario parameters, controller families, or real-world environments.
 
 ## Evidence identity
 
