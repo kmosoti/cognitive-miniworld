@@ -51,15 +51,16 @@ flowchart LR
     V --> D{Promote, revise, or kill}
 ```
 
-This topology is executable for the Milestone 0 baseline/oracle qualification
-and the first four core state-estimation, forward-model, typed-error, and
-affordance comparisons. Later candidate primitives enter through the same
-typed seams, one preregistered comparison at a time.
+This topology is executable for the Milestone 0 baseline/oracle qualification,
+the complete five-primitive Milestone 1 predictive loop, and the separately
+scoped MW-040 episodic-memory comparison. Later candidate primitives enter
+through the same typed seams, one preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.11.0` retains the Milestone 0 substrate and adds the first four core
-primitives:
+Package `0.13.0` retains the Milestone 0 substrate, completes the five-primitive
+Milestone 1 predictive closed-loop spine, and separately adds the MW-040
+episodic recorder:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -105,6 +106,13 @@ primitives:
   outcome, timing, binary agency, and learning-progress channels from public
   forecasts, beliefs, references, and observations. The executable scalar
   absolute-error collapse remains available only as an ablation baseline.
+- `ActionArbitrator` scores parallel public proposals as reference progress
+  minus risk and resource cost plus information value, excludes dominated
+  irreversible actions, and emits an `ActionDecision` with its signed rationale,
+  provenance, confidence, and choice entropy.
+- `EpisodicRecorder` preserves complete immutable public decision episodes,
+  retains them under a deterministic capacity bound, and retrieves contextual
+  matches with exact, conflicting, query-only, and record-only feature evidence.
 - `cmw.experiments` runs isolated serial or free-threaded paired episodes,
   materializes public stimuli without leaking evaluator schedules, confines the
   tractable demand-shift oracle to evaluation code, and rejects excessive work
@@ -123,6 +131,13 @@ primitives:
 - The MW-013 evaluator crosses every hidden truth assignment with every public
   observation mask, compares feasible-best-action recall with a goal-only
   baseline, and compares invalid-action rate with enumerating every action.
+- The MW-014 evaluator runs the canonical delayed-poison comparison against the
+  registered reactive controller and a fully enumerated evaluator-only oracle,
+  reporting paired viability, regret, irreversible actions, and observed
+  reversible-dominance cases.
+- The separate MW-040 evaluator compares contextual episodic retrieval with a
+  fixed no-retrieval wait policy, measures paired decision delta, and rejects
+  stale partial matches that outrank exact current context.
 - The typed M0 gate revalidates run identities, replay hashes, event-derived
   metrics, safety counts, and the deterministic bootstrap before evidence is
   serialized.
@@ -166,6 +181,22 @@ from `0.375` for enumerate-all to `0.23076923076923075`, a reduction of
 `0.14423076923076922` above the `0.1` gate. Every incomplete-evidence case
 retained at least two candidates, and generation and selection failure remained
 distinct. See [the MW-013 verdict](docs/verdicts/MW-013.md).
+
+The frozen 100-seed MW-014 comparison passed: predictive arbitration raised
+viability AUC from `0.1273170731707317` for reactive control to
+`0.14878048780487807`, improving every paired seed by
+`0.02146341463414636`. It made `0` irreversible consumes versus `200`, observed
+reversible dominance in all 100 initial decisions, and held maximum
+evaluator-only oracle regret to `0.02853658536585363`, below the `0.03` gate and
+below reactive regret. Together with the executable cross-primitive seam and
+MW-010 through MW-013 recovery evidence, this closes the MW-CORE acceptance
+criterion. See [the MW-014 verdict](docs/verdicts/MW-014.md).
+
+The frozen 100-seed MW-040 comparison also passed independently of M1:
+retrieval decision quality was `1.0` versus `0.45` for fixed wait, a mean paired
+delta of `0.55` above the `0.4` gate. No stale episode was selected, every
+winning current-context match scored `1.0`, and all 100 seed-bound traces were
+unique. See [the MW-040 verdict](docs/verdicts/MW-040.md).
 
 ## Try deterministic replay
 

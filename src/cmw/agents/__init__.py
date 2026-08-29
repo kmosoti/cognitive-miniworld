@@ -12,6 +12,12 @@ from cmw.agents.affordances import (
     BeliefAffordanceGenerator,
     observe_affordance_cycle,
 )
+from cmw.agents.arbitration import (
+    ActionArbitrator,
+    ActionValue,
+    ArbitrationResult,
+    ArbitrationWeights,
+)
 from cmw.agents.curiosity import (
     PredictionErrorCuriosityBaseline,
     RandomCuriosityBaseline,
@@ -19,6 +25,17 @@ from cmw.agents.curiosity import (
     prediction_error_curiosity,
     random_curiosity,
     random_exploration,
+)
+from cmw.agents.episodic import (
+    CURRENT_EPISODIC_SCHEMA_VERSION,
+    EPISODIC_SCHEMA_VERSION,
+    EpisodicMatch,
+    EpisodicRecord,
+    EpisodicRecorder,
+    EpisodicRetrieval,
+    FeatureMatchEvidence,
+    encode_episodic_record,
+    encode_episodic_retrieval,
 )
 from cmw.agents.errors import (
     ScalarAbsoluteErrorBaseline,
@@ -59,12 +76,23 @@ from cmw.agents.registry import (
 __all__ = [
     "BASELINE_COVERAGE",
     "BASELINE_COVERAGE_REGISTRY",
+    "CURRENT_EPISODIC_SCHEMA_VERSION",
+    "EPISODIC_SCHEMA_VERSION",
+    "ActionArbitrator",
+    "ActionValue",
     "AffordanceCycleObservation",
     "AffordanceGeneration",
     "AffordanceTemplate",
+    "ArbitrationResult",
+    "ArbitrationWeights",
     "BaselineCoverage",
     "BaselineImplementation",
     "BeliefAffordanceGenerator",
+    "EpisodicMatch",
+    "EpisodicRecord",
+    "EpisodicRecorder",
+    "EpisodicRetrieval",
+    "FeatureMatchEvidence",
     "KnownTabularForwardModel",
     "KnownTransition",
     "LastObservationEstimator",
@@ -82,6 +110,8 @@ __all__ = [
     "TypedErrorDecomposer",
     "baseline_coverage",
     "coverage_for",
+    "encode_episodic_record",
+    "encode_episodic_retrieval",
     "last_observation",
     "last_observation_estimate",
     "marginal_probability",
