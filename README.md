@@ -52,15 +52,16 @@ flowchart LR
 ```
 
 This topology is executable for the Milestone 0 baseline/oracle qualification,
-the complete five-primitive Milestone 1 predictive loop, and the separately
-scoped MW-040 episodic-memory comparison. Later candidate primitives enter
-through the same typed seams, one preregistered comparison at a time.
+the complete five-primitive Milestone 1 predictive loop, the MW-020 dynamic
+reference comparison, and the separately scoped MW-040 episodic-memory
+comparison. Later candidate primitives enter through the same typed seams, one
+preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.13.0` retains the Milestone 0 substrate, completes the five-primitive
-Milestone 1 predictive closed-loop spine, and separately adds the MW-040
-episodic recorder:
+Package `0.14.0` retains the completed Milestone 0 substrate and Milestone 1
+predictive spine, separately retains the MW-040 episodic recorder, and adds the
+first Milestone 2 regulation primitive through MW-020:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -113,6 +114,9 @@ episodic recorder:
 - `EpisodicRecorder` preserves complete immutable public decision episodes,
   retains them under a deterministic capacity bound, and retrieves contextual
   matches with exact, conflicting, query-only, and record-only feature evidence.
+- `DynamicReferenceGenerator` combines a public belief, forecast, and resource
+  budget into a bounded reference trajectory whose target rises with predicted
+  demand and current-state deficit while preserving exact contract provenance.
 - `cmw.experiments` runs isolated serial or free-threaded paired episodes,
   materializes public stimuli without leaking evaluator schedules, confines the
   tractable demand-shift oracle to evaluation code, and rejects excessive work
@@ -138,6 +142,9 @@ episodic recorder:
 - The separate MW-040 evaluator compares contextual episodic retrieval with a
   fixed no-retrieval wait policy, measures paired decision delta, and rejects
   stale partial matches that outrank exact current context.
+- The MW-020 evaluator compares forecast-aware references with the registered
+  fixed-setpoint baseline, verifies anticipatory action before a known demand
+  rise, and rejects safety regression or nominally constant targets.
 - The typed M0 gate revalidates run identities, replay hashes, event-derived
   metrics, safety counts, and the deterministic bootstrap before evidence is
   serialized.
@@ -197,6 +204,13 @@ retrieval decision quality was `1.0` versus `0.45` for fixed wait, a mean paired
 delta of `0.55` above the `0.4` gate. No stale episode was selected, every
 winning current-context match scored `1.0`, and all 100 seed-bound traces were
 unique. See [the MW-040 verdict](docs/verdicts/MW-040.md).
+
+The frozen 100-seed MW-020 comparison passed: the dynamic-reference candidate
+reduced time outside viability by `3.0` ticks on every seed and raised viability
+AUC by a mean `0.014634146341463402` without increasing irreversible errors. It
+acted at tick `8`, before the tick-`12` demand rise; warning demand raised the
+target by exactly `5.0` units at fixed state, and subsequent depletion raised it
+by another `0.625`. See [the MW-020 verdict](docs/verdicts/MW-020.md).
 
 ## Try deterministic replay
 
