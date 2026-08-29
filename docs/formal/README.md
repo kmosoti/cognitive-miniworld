@@ -1,6 +1,6 @@
 # M2 design-time proofs
 
-`M2Regulation.lean` is a dependency-free Lean 4.24.0 refinement of the
+`M2Regulation.lean` is a Std-only Lean 4.24.0 refinement of the
 mathematical core accepted in ADR-028 and ADR-029. Compile it from the repository
 root with:
 
@@ -22,14 +22,17 @@ lean docs/formal/M2Regulation.lean
 | `fixed_increment_quadratic_identity` | `V / p = q (2 (r - x) - q) / t^2`; the Lean right side writes `2a` as `a + a` and omits positive denominator `t²` |
 | the three `*_witness` theorems | The frozen `r = 50`, `t = 10`, `q = 20`, `x = 20, 40, 80` contrast. Numerators `800, 0, -1600` divide by `t² = 100` to give Python's `8.0, 0.0, -16.0` |
 | `no_universal_positive_resource_constant` | No single positive state-independent reward can equal all three values for the identical `+20` outcome |
-| `positive_increment_*` and `consume_rule_*` | The exact threshold `x = r - q/2` and the controller condition `marginal_value > 0` |
+| `positive_increment_*` | The exact threshold `x = r - q/2` in the integer-scaled model |
+| `positive_gate_*` | The `> 0` selection predicate applied to the registered `q = 20` analytical witnesses; these do not verify the runtime `q = 1` trace |
 
-The integer scaling is exact for the frozen decimal coefficients and preserves
-bounds and order. The valuation numerator preserves zero and sign because the
-omitted tolerance square is strictly positive; multiplying by a positive
-priority also preserves sign. A zero priority makes every value zero, as in the
-Python implementation, so the sign theorems intentionally describe positive
-priority.
+The model's integer scaling is exact for the frozen decimal coefficients and
+preserves bounds and order on integer capacity, demand, and state inputs. It
+does not quantify over every finite float accepted by Python or over the
+weighted expectations used to produce those inputs. The valuation numerator
+preserves zero and sign because the omitted tolerance square is strictly
+positive; multiplying by a positive priority also preserves sign. A zero
+priority makes every value zero, as in the Python implementation, so the sign
+theorems intentionally describe positive priority.
 
 ## Proof boundary
 
@@ -38,5 +41,6 @@ analytical witnesses. They do **not** verify Python bytecode, `msgspec` contract
 validation, `math.fsum`, IEEE-754 rounding/overflow behavior, provenance,
 compute accounting, experiment adapters, or the empirical 100-seed gate.
 Those remain covered by repository tests and accepted evidence. The file uses
-only `import Std`; it contains no `sorry`, `admit`, custom axioms, or unsafe
-proof escape.
+only `import Std`; it contains no `sorry`, `admit`, custom axioms, `unsafe`, or
+native-code proof evaluation. Concrete propositions reduce through Lean's
+kernel decision procedure.

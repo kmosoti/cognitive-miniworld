@@ -154,10 +154,11 @@ design-time algebra independently of the experiment code. It proves target
 bounds, weak forecast/state monotonicities through clipping, the quadratic
 increment identity and its sign threshold, the three registered witnesses,
 and the impossibility of representing all three with one positive constant.
-The proof uses exact integer scaling for the frozen coefficients and omits only
-positive factors when reasoning about signs. It is not a proof of floating-
-point execution or the empirical trace; that boundary is explicit in the proof
-map and remains covered by executable validation.
+The proof uses exact integer scaling for the frozen coefficients on integer
+capacity, demand, and state inputs, and omits only positive factors when
+reasoning about signs. It does not quantify over all finite floats and is not a
+proof of floating-point execution or the empirical trace; that boundary is
+explicit in the proof map and remains covered by executable validation.
 
 ## Threats to validity and next tests
 

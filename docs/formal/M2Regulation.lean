@@ -5,7 +5,7 @@ Design-time formalization of the mathematical core of M2 endogenous regulation.
 
 The dynamic-reference formula is ADR-028's frozen formula multiplied by 10,000:
 
-  10,000 target = 3,000 C + 500 C d + 25 max(0, 60 C - 100 x).
+  10,000 raw_target = 3,000 C + 500 C d + 25 max(0, 60 C - 100 x).
 
 The valuation formula omits the positive tolerance-square denominator and
 priority multiplier when reasoning about signs.  See README.md for the exact
@@ -130,21 +130,21 @@ theorem positive_increment_above_threshold_is_negative
 
 theorem deprivation_witness :
     stateRelativeValueNumerator 20 40 50 = 800 := by
-  native_decide
+  decide
 
 theorem sufficiency_witness :
     stateRelativeValueNumerator 40 60 50 = 0 := by
-  native_decide
+  decide
 
 theorem excess_witness :
     stateRelativeValueNumerator 80 100 50 = -1600 := by
-  native_decide
+  decide
 
 theorem same_resource_has_all_three_signs :
     0 < stateRelativeValueNumerator 20 (20 + 20) 50 ∧
     stateRelativeValueNumerator 40 (40 + 20) 50 = 0 ∧
     stateRelativeValueNumerator 80 (80 + 20) 50 < 0 := by
-  native_decide
+  decide
 
 theorem no_universal_positive_resource_constant :
     ¬ ∃ k : Int,
@@ -158,13 +158,13 @@ theorem no_universal_positive_resource_constant :
     sufficiency_witness
   omega
 
-theorem consume_rule_selects_deprivation_probe :
+theorem positive_gate_accepts_deprivation_witness :
     0 < stateRelativeValueNumerator 20 (20 + 20) 50 := by
   exact same_resource_has_all_three_signs.1
 
-theorem consume_rule_rejects_sufficiency_and_excess_probes :
+theorem positive_gate_rejects_neutral_and_excess_witnesses :
     ¬ 0 < stateRelativeValueNumerator 40 (40 + 20) 50 ∧
     ¬ 0 < stateRelativeValueNumerator 80 (80 + 20) 50 := by
-  native_decide
+  decide
 
 end CMW.M2

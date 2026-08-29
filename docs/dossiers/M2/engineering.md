@@ -68,9 +68,9 @@ For one deterministic variable and increment `q`, elementary expansion gives
 With positive priority and tolerance, only the numerator controls the sign.
 This yields an executable policy boundary: consuming a positive increment is
 beneficial exactly when `x < r-q/2`, neutral at equality, and harmful above it.
-The Lean artifact added with this dossier formalizes the corresponding real-
-arithmetic invariants and states where clipping changes strict to weak
-monotonicity.
+The Lean artifact added with this dossier formalizes the corresponding
+integer-scaled invariants and states where clipping changes strict to weak
+monotonicity. Python's broader finite-float domain remains outside that proof.
 
 ## Behavioral composition
 
