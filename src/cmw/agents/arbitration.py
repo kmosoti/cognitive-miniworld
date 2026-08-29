@@ -25,6 +25,8 @@ from cmw.contracts import (
     Uncertainty,
 )
 
+from .valuation import StateRelativeOutcomeValuator, _distribution_deviation_cost
+
 _PRODUCER: Final = "cmw.agents.action-arbitrator"
 _MAX_CANDIDATES: Final = 64
 _MAX_DISTRIBUTION_ITEMS: Final = 64
@@ -347,11 +349,16 @@ class ActionArbitrator:
     """Select the highest-valued feasible non-dominated public proposal."""
 
     weights: ArbitrationWeights = dataclass_field(default_factory=ArbitrationWeights)
+    outcome_valuator: StateRelativeOutcomeValuator = dataclass_field(
+        default_factory=StateRelativeOutcomeValuator
+    )
 
     def __post_init__(self) -> None:
         if type(self.weights) is not ArbitrationWeights:
             raise TypeError("weights must be ArbitrationWeights")
         self.weights.__post_init__()
+        if type(self.outcome_valuator) is not StateRelativeOutcomeValuator:
+            raise TypeError("outcome_valuator must be a StateRelativeOutcomeValuator")
 
     def arbitrate(
         self,
@@ -390,8 +397,10 @@ class ActionArbitrator:
                 prediction.outcomes,
                 points,
             )
-            reference_progress = _canonical(
-                reference.priority * (current_cost - predicted_cost)
+            reference_progress = self.outcome_valuator.value_costs(
+                current_deviation_cost=current_cost,
+                predicted_deviation_cost=predicted_cost,
+                reference_priority=reference.priority,
             )
             violation_risk = _reference_violation_probability(
                 prediction.outcomes,
@@ -760,23 +769,6 @@ def _normalized_deviation(value: float, point: ReferencePoint) -> float:
     if not math.isfinite(deviation) or deviation > _MAX_NORMALIZED_DEVIATION:
         raise ValueError("normalized reference deviation exceeds its finite limit")
     return deviation
-
-
-def _distribution_deviation_cost(
-    items: tuple[StateHypothesis, ...] | tuple[PredictedOutcome, ...],
-    points: tuple[ReferencePoint, ...],
-) -> float:
-    item_costs = []
-    for item in items:
-        if item.probability == 0.0:
-            continue
-        features = _item_features(item, points)
-        deviation_cost = math.fsum(
-            _normalized_deviation(features[point.variable], point) ** 2
-            for point in points
-        ) / len(points)
-        item_costs.append(item.probability * deviation_cost)
-    return _canonical(math.fsum(item_costs))
 
 
 def _reference_violation_probability(

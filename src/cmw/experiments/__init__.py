@@ -101,6 +101,16 @@ from cmw.experiments.state_estimation import (
     evaluate_state_estimator,
     evaluate_state_estimator_tier,
 )
+from cmw.experiments.state_relative_valuation import (
+    CURRENT_STATE_RELATIVE_VALUATION_SCHEMA_VERSION,
+    StateRelativeValuationEvaluationConfig,
+    StateRelativeValuationEvaluationResult,
+    StateRelativeValueEvidence,
+    encode_state_relative_valuation_result,
+    evaluate_state_relative_valuation,
+    evaluate_state_relative_valuation_tier,
+    state_relative_valuation_evidence_sha256,
+)
 
 __all__ = [
     "ANALYSIS_ROOT_SEED",
@@ -118,6 +128,7 @@ __all__ = [
     "CURRENT_FORWARD_MODEL_SCHEMA_VERSION",
     "CURRENT_M0_SCHEMA_VERSION",
     "CURRENT_STATE_ESTIMATION_SCHEMA_VERSION",
+    "CURRENT_STATE_RELATIVE_VALUATION_SCHEMA_VERSION",
     "FIXTURE_ID",
     "MAX_M0_RUN_RESULTS",
     "MINIMUM_EFFECT",
@@ -149,6 +160,9 @@ __all__ = [
     "StateEstimationEvaluationConfig",
     "StateEstimationEvaluationResult",
     "StateEstimationPairEvidence",
+    "StateRelativeValuationEvaluationConfig",
+    "StateRelativeValuationEvaluationResult",
+    "StateRelativeValueEvidence",
     "StimulusObservationResult",
     "StimulusSchedule",
     "StimulusScheduleContinuation",
@@ -165,6 +179,7 @@ __all__ = [
     "encode_error_disagreement_result",
     "encode_forward_model_result",
     "encode_state_estimation_result",
+    "encode_state_relative_valuation_result",
     "evaluate_action_arbitrator",
     "evaluate_action_arbitrator_tier",
     "evaluate_affordance_generator",
@@ -181,7 +196,10 @@ __all__ = [
     "evaluate_non_confirmatory",
     "evaluate_state_estimator",
     "evaluate_state_estimator_tier",
+    "evaluate_state_relative_valuation",
+    "evaluate_state_relative_valuation_tier",
     "evaluate_tier",
     "execute_baseline_coverage",
     "generate_stimulus_observations",
+    "state_relative_valuation_evidence_sha256",
 ]

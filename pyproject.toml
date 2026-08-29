@@ -1,6 +1,6 @@
 [project]
 name = "cognitive-miniworld"
-version = "0.14.0"
+version = "0.15.0"
 description = "ViabilityGrid: a deterministic testbed for cognitive primitives"
 readme = "README.md"
 requires-python = ">=3.14.7,<3.15"

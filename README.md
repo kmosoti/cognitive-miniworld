@@ -52,16 +52,17 @@ flowchart LR
 ```
 
 This topology is executable for the Milestone 0 baseline/oracle qualification,
-the complete five-primitive Milestone 1 predictive loop, the MW-020 dynamic
-reference comparison, and the separately scoped MW-040 episodic-memory
-comparison. Later candidate primitives enter through the same typed seams, one
+the complete five-primitive Milestone 1 predictive loop, the completed
+Milestone 2 endogenous-regulation comparison, and the separately scoped MW-040
+episodic-memory comparison. Later candidate primitives enter through the same
+typed seams, one
 preregistered comparison at a time.
 
 ## What exists now
 
-Package `0.14.0` retains the completed Milestone 0 substrate and Milestone 1
-predictive spine, separately retains the MW-040 episodic recorder, and adds the
-first Milestone 2 regulation primitive through MW-020:
+Package `0.15.0` retains the completed Milestone 0 substrate and Milestone 1
+predictive spine, separately retains the MW-040 episodic recorder, and closes
+Milestone 2 through MW-020 and MW-021:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -111,6 +112,10 @@ first Milestone 2 regulation primitive through MW-020:
   minus risk and resource cost plus information value, excludes dominated
   irreversible actions, and emits an `ActionDecision` with its signed rationale,
   provenance, confidence, and choice entropy.
+- `StateRelativeOutcomeValuator` gives an outcome signed value from the
+  probability-weighted reduction in squared normalized reference deviation.
+  Arbitration and regulation share this implementation; candidate code has no
+  universally positive resource reward.
 - `EpisodicRecorder` preserves complete immutable public decision episodes,
   retains them under a deterministic capacity bound, and retrieves contextual
   matches with exact, conflicting, query-only, and record-only feature evidence.
@@ -143,8 +148,12 @@ first Milestone 2 regulation primitive through MW-020:
   fixed no-retrieval wait policy, measures paired decision delta, and rejects
   stale partial matches that outrank exact current context.
 - The MW-020 evaluator compares forecast-aware references with the registered
-  fixed-setpoint baseline, verifies anticipatory action before a known demand
-  rise, and rejects safety regression or nominally constant targets.
+  fixed-setpoint baseline, verifies that signed marginal value selects the
+  anticipatory action before a known demand rise, and rejects safety regression
+  or nominally constant targets.
+- The MW-021 evaluator holds one resource outcome fixed across deprivation,
+  sufficiency, and excess, compares signed reference-relative value with a
+  fixed-positive ablation, and requalifies the complete M2 demand-shift gate.
 - The typed M0 gate revalidates run identities, replay hashes, event-derived
   metrics, safety counts, and the deterministic bootstrap before evidence is
   serialized.
@@ -211,6 +220,15 @@ AUC by a mean `0.014634146341463402` without increasing irreversible errors. It
 acted at tick `8`, before the tick-`12` demand rise; warning demand raised the
 target by exactly `5.0` units at fixed state, and subsequent depletion raised it
 by another `0.625`. See [the MW-020 verdict](docs/verdicts/MW-020.md).
+
+The frozen MW-021 contrast also passed: the identical `+20` resource outcome
+valued `8.0`, `0.0`, and `-16.0` under deprivation, sufficiency, and excess,
+while the fixed-positive ablation remained `1.0` in all three states. In the
+composed 100-seed demand-shift gate, all pre-consume values were nonpositive,
+the tick-`8` consume value was positive, time outside viability improved by
+`3.0` ticks on every seed, and irreversible errors did not increase. Together
+with MW-020 this closes M2. See [the MW-021 verdict](docs/verdicts/MW-021.md)
+and [M2 dossier](docs/dossiers/M2/README.md).
 
 ## Try deterministic replay
 
@@ -304,4 +322,6 @@ The durable research program and dependency graph live in the
 delivery order. [Milestone dossiers](docs/dossiers/README.md) synthesize the
 thesis, design, observations, science, and engineering; ADRs record decisions
 and verdicts preserve accepted evidence. Milestone 0 qualifies the laboratory,
-and Milestone 1 closes the first five-primitive predictive-control loop.
+Milestone 1 closes the first five-primitive predictive-control loop, and
+Milestone 2 composes forecast-bound references with state-relative outcome
+value.

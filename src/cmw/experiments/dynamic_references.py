@@ -11,7 +11,11 @@ from typing import Final, Literal, cast
 import msgspec
 
 from cmw import __version__
-from cmw.agents import DynamicReferenceGenerator, ReactiveFixedSetpointController
+from cmw.agents import (
+    DynamicReferenceGenerator,
+    ReactiveFixedSetpointController,
+    StateRelativeOutcomeValuator,
+)
 from cmw.agents._common import proposal
 from cmw.contracts import (
     CURRENT_SCHEMA_VERSION,
@@ -22,6 +26,7 @@ from cmw.contracts import (
     PredictedOutcome,
     PredictionDistribution,
     Provenance,
+    ReferencePoint,
     ReferenceTrajectory,
     ResourceBudget,
     StateHypothesis,
@@ -38,7 +43,7 @@ from cmw.scenarios import (
     manifest_digest,
 )
 
-DYNAMIC_REFERENCE_SCHEMA_VERSION: Final = 1
+DYNAMIC_REFERENCE_SCHEMA_VERSION: Final = 2
 CURRENT_DYNAMIC_REFERENCE_SCHEMA_VERSION: Final = DYNAMIC_REFERENCE_SCHEMA_VERSION
 
 CONFIRMATORY_MODE: Final = "confirmatory"
@@ -66,6 +71,10 @@ MINIMUM_VIABILITY_AUC_DIFFERENCE: Final = 0.0
 MAXIMUM_IRREVERSIBLE_ERROR_INCREASE: Final = 0.0
 MINIMUM_DEMAND_TARGET_INCREASE: Final = 5.0
 MINIMUM_STATE_TARGET_INCREASE: Final = 0.5
+VALUATION_OUTCOME_INCREMENT: Final = 1.0
+VALUATION_SELECTION_RULE: Final = (
+    "consume iff resource_present and state_relative_marginal_value > 0"
+)
 
 _POLICY_PRODUCER: Final = "cmw.experiments.dynamic-references.policy"
 _BELIEF_PRODUCER: Final = "cmw.experiments.dynamic-references.state-adapter"
@@ -163,6 +172,8 @@ class DynamicReferenceEvaluationConfig(
     maximum_irreversible_error_increase: float
     minimum_demand_target_increase: float
     minimum_state_target_increase: float
+    valuation_outcome_increment: float
+    valuation_selection_rule: str
 
     def __post_init__(self) -> None:
         _schema_version(self.schema_version)
@@ -201,6 +212,8 @@ class DynamicReferenceEvaluationConfig(
             ),
             "minimum_demand_target_increase": MINIMUM_DEMAND_TARGET_INCREASE,
             "minimum_state_target_increase": MINIMUM_STATE_TARGET_INCREASE,
+            "valuation_outcome_increment": VALUATION_OUTCOME_INCREMENT,
+            "valuation_selection_rule": VALUATION_SELECTION_RULE,
         }
         for field, expected_value in expected.items():
             actual = getattr(self, field)
@@ -258,6 +271,8 @@ class DynamicReferenceEvaluationConfig(
             ),
             minimum_demand_target_increase=MINIMUM_DEMAND_TARGET_INCREASE,
             minimum_state_target_increase=MINIMUM_STATE_TARGET_INCREASE,
+            valuation_outcome_increment=VALUATION_OUTCOME_INCREMENT,
+            valuation_selection_rule=VALUATION_SELECTION_RULE,
         )
 
 
@@ -492,9 +507,11 @@ class _ReferenceCycle:
 @dataclass(frozen=True, slots=True)
 class _DynamicReferencePolicy:
     generator: DynamicReferenceGenerator
+    valuator: StateRelativeOutcomeValuator
     warning_kind: str
     forecast_demand_multiplier: float
     planning_horizon_ticks: int
+    valuation_outcome_increment: float
 
     @classmethod
     def from_config(
@@ -504,9 +521,11 @@ class _DynamicReferencePolicy:
         configuration.__post_init__()
         return cls(
             generator=DynamicReferenceGenerator(),
+            valuator=StateRelativeOutcomeValuator(),
             warning_kind=configuration.warning_kind,
             forecast_demand_multiplier=configuration.forecast_demand_multiplier,
             planning_horizon_ticks=configuration.planning_horizon_ticks,
+            valuation_outcome_increment=configuration.valuation_outcome_increment,
         )
 
     @property
@@ -538,6 +557,11 @@ class _DynamicReferencePolicy:
             _feature("state_correction_gain", generator.state_correction_gain),
             _feature("sufficiency_fraction", generator.sufficiency_fraction),
             _feature("tolerance_fraction", generator.tolerance_fraction),
+            _feature(
+                "valuation_outcome_increment",
+                self.valuation_outcome_increment,
+            ),
+            _feature("valuation_selection_rule", VALUATION_SELECTION_RULE),
             _feature("warning_kind", self.warning_kind),
         )
 
@@ -569,6 +593,9 @@ class _DynamicReferencePolicy:
         predicted_demand = _expected_feature(forecast, "ambient_demand")
         predicted_energy = _expected_feature(forecast, "energy")
         target = reference.points[0].target
+        reference_point = reference.points[0]
+        if type(reference_point) is not ReferencePoint:
+            raise TypeError("reference must contain ReferencePoint values")
         current_demand = _number(
             _value(_modality(observations, "interoceptive"), "ambient_demand"),
             "ambient_demand",
@@ -584,7 +611,16 @@ class _DynamicReferencePolicy:
         )
         if type(resource_feature.value) is not bool:
             raise TypeError("resource_present must be a bool")
-        consume = resource_feature.value and predicted_energy < target
+        candidate_outcome_energy = (
+            predicted_energy + self.valuation_outcome_increment
+        )
+        resource_marginal_value = self.valuator.value_point(
+            current_state=predicted_energy,
+            predicted_state=candidate_outcome_energy,
+            reference_point=reference_point,
+            reference_priority=reference.priority,
+        )
+        consume = resource_feature.value and resource_marginal_value > 0.0
         action = "consume" if consume else "wait"
         for required_action in ("consume", "wait"):
             if required_action not in view.world.action_names:
@@ -607,6 +643,20 @@ class _DynamicReferencePolicy:
                 ),
                 _feature("predicted_demand", predicted_demand, "multiplier"),
                 _feature("predicted_energy", predicted_energy, "units"),
+                _feature(
+                    "resource_marginal_value",
+                    resource_marginal_value,
+                ),
+                _feature(
+                    "resource_outcome_energy",
+                    candidate_outcome_energy,
+                    "units",
+                ),
+                _feature(
+                    "resource_outcome_increment",
+                    self.valuation_outcome_increment,
+                    "units",
+                ),
                 _feature("reference_horizon_tick", horizon_tick, "ticks"),
                 _feature("reference_id", reference.trajectory_id),
                 _feature("reference_target", target, "units"),
@@ -724,6 +774,10 @@ class DynamicReferenceEvidence(
     consume_belief_id: str
     consume_forecast_id: str
     consume_reference_id: str
+    consume_resource_marginal_value: float
+    consume_resource_outcome_energy: float
+    consume_resource_outcome_increment: float
+    maximum_preconsume_resource_marginal_value: float
 
     def __post_init__(self) -> None:
         _schema_version(self.schema_version)
@@ -750,6 +804,10 @@ class DynamicReferenceEvidence(
             "state_target_increase",
             "consume_predicted_energy",
             "consume_reference_target",
+            "consume_resource_marginal_value",
+            "consume_resource_outcome_energy",
+            "consume_resource_outcome_increment",
+            "maximum_preconsume_resource_marginal_value",
         ):
             _finite(getattr(self, field), field)
         _nonnegative_int(self.candidate_consume_tick, "candidate_consume_tick")
@@ -798,6 +856,14 @@ class DynamicReferenceEvidence(
             raise ValueError(
                 "consume must be triggered by a forecast reference deficit"
             )
+        if self.consume_resource_marginal_value <= 0.0:
+            raise ValueError("consume must have positive state-relative value")
+        if self.consume_resource_outcome_energy != (
+            self.consume_predicted_energy + self.consume_resource_outcome_increment
+        ):
+            raise ValueError("resource outcome must add the preregistered increment")
+        if self.maximum_preconsume_resource_marginal_value > 0.0:
+            raise ValueError("policy must not wait while resource value is positive")
         if self.consume_belief_id not in self.consume_reference_id:
             raise ValueError("reference ID must identify its belief")
         if self.consume_forecast_id not in self.consume_reference_id:
@@ -834,6 +900,9 @@ def _evaluate_seed(
     first_warning = _action_at(candidate, configuration.warning_start_tick)
     last_warning = _action_at(candidate, configuration.warning_end_tick)
     consume = _action_at(candidate, candidate_consume_ticks[0])
+    preconsume_actions = tuple(
+        _action_at(candidate, tick) for tick in range(candidate_consume_ticks[0])
+    )
     prewarning_target = _float_parameter(prewarning, "reference_target")
     first_warning_target = _float_parameter(first_warning, "reference_target")
     nominal_warning_state_target = _float_parameter(
@@ -888,6 +957,22 @@ def _evaluate_seed(
         consume_belief_id=_text_parameter(consume, "belief_id"),
         consume_forecast_id=_text_parameter(consume, "forecast_id"),
         consume_reference_id=_text_parameter(consume, "reference_id"),
+        consume_resource_marginal_value=_float_parameter(
+            consume,
+            "resource_marginal_value",
+        ),
+        consume_resource_outcome_energy=_float_parameter(
+            consume,
+            "resource_outcome_energy",
+        ),
+        consume_resource_outcome_increment=_float_parameter(
+            consume,
+            "resource_outcome_increment",
+        ),
+        maximum_preconsume_resource_marginal_value=max(
+            _float_parameter(action, "resource_marginal_value")
+            for action in preconsume_actions
+        ),
     )
 
 
@@ -910,6 +995,8 @@ class DynamicReferenceEvaluationResult(
     latest_candidate_consume_tick: int
     minimum_demand_target_increase: float
     minimum_state_target_increase: float
+    minimum_consume_resource_marginal_value: float
+    maximum_preconsume_resource_marginal_value: float
     passed: bool
 
     def __post_init__(self) -> None:
@@ -958,6 +1045,13 @@ class DynamicReferenceEvaluationResult(
             "minimum_state_target_increase": min(
                 item.state_target_increase for item in self.evidence
             ),
+            "minimum_consume_resource_marginal_value": min(
+                item.consume_resource_marginal_value for item in self.evidence
+            ),
+            "maximum_preconsume_resource_marginal_value": max(
+                item.maximum_preconsume_resource_marginal_value
+                for item in self.evidence
+            ),
         }
         for field, expected_value in expected.items():
             actual = getattr(self, field)
@@ -976,6 +1070,8 @@ class DynamicReferenceEvaluationResult(
             >= self.configuration.minimum_demand_target_increase
             and self.minimum_state_target_increase
             >= self.configuration.minimum_state_target_increase
+            and self.minimum_consume_resource_marginal_value > 0.0
+            and self.maximum_preconsume_resource_marginal_value <= 0.0
             and all(
                 item.warning_predicted_demand > item.prewarning_predicted_demand
                 for item in self.evidence
@@ -1010,6 +1106,12 @@ def _evaluate(
     latest_consume = max(item.candidate_consume_tick for item in evidence)
     minimum_demand = min(item.demand_target_increase for item in evidence)
     minimum_state = min(item.state_target_increase for item in evidence)
+    minimum_consume_value = min(
+        item.consume_resource_marginal_value for item in evidence
+    )
+    maximum_preconsume_value = max(
+        item.maximum_preconsume_resource_marginal_value for item in evidence
+    )
     passed = (
         minimum_improvement >= configuration.minimum_time_outside_improvement
         and minimum_auc >= configuration.minimum_viability_auc_difference
@@ -1017,6 +1119,8 @@ def _evaluate(
         and latest_consume < configuration.demand_shift_tick
         and minimum_demand >= configuration.minimum_demand_target_increase
         and minimum_state >= configuration.minimum_state_target_increase
+        and minimum_consume_value > 0.0
+        and maximum_preconsume_value <= 0.0
         and all(
             item.warning_predicted_demand > item.prewarning_predicted_demand
             for item in evidence
@@ -1034,6 +1138,8 @@ def _evaluate(
         latest_candidate_consume_tick=latest_consume,
         minimum_demand_target_increase=minimum_demand,
         minimum_state_target_increase=minimum_state,
+        minimum_consume_resource_marginal_value=minimum_consume_value,
+        maximum_preconsume_resource_marginal_value=maximum_preconsume_value,
         passed=passed,
     )
 
@@ -1094,6 +1200,8 @@ __all__ = [
     "PLANNING_HORIZON_TICKS",
     "PRIMARY_METRIC_NAME",
     "SAFETY_METRIC_NAME",
+    "VALUATION_OUTCOME_INCREMENT",
+    "VALUATION_SELECTION_RULE",
     "WARNING_END_TICK",
     "WARNING_KIND",
     "WARNING_START_TICK",
