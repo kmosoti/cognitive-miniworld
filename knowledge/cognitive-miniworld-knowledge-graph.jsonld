@@ -773,6 +773,7 @@
       "objective": "Produce context-sensitive reference trajectories rather than one static set point.",
       "inputType": [
         "cmw:contract/belief-state",
+        "cmw:contract/prediction-distribution",
         "cmw:contract/resource-budget"
       ],
       "outputType": [
@@ -3231,7 +3232,7 @@
       "identifier": "MW-020",
       "label": "Dynamic reference generator",
       "priority": "P1",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-014"
       ],

@@ -62,6 +62,7 @@ from cmw.agents.reactive import (
     ReactiveFixedSetpointController,
     reactive_fixed_setpoint,
 )
+from cmw.agents.references import DynamicReferenceGenerator
 from cmw.agents.registry import (
     BASELINE_COVERAGE,
     BASELINE_COVERAGE_REGISTRY,
@@ -88,6 +89,7 @@ __all__ = [
     "BaselineCoverage",
     "BaselineImplementation",
     "BeliefAffordanceGenerator",
+    "DynamicReferenceGenerator",
     "EpisodicMatch",
     "EpisodicRecord",
     "EpisodicRecorder",
