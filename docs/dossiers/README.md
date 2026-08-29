@@ -15,6 +15,7 @@ the issue-level verdicts:
 | --- | --- | --- | --- |
 | M0 | [Foundation and reproducibility](M0/README.md) | [Science](M0/science.md) · [Engineering](M0/engineering.md) | A deterministic laboratory with a measurable baseline-to-oracle gap |
 | M1 | [Predictive control](M1/README.md) | [Science](M1/science.md) · [Engineering](M1/engineering.md) | A five-primitive, public, nonlinguistic predictive-control loop |
+| M2 | [Endogenous regulation](M2/README.md) | [Science](M2/science.md) · [Engineering](M2/engineering.md) | Forecast-bound references and state-relative outcome value |
 
 ## Evidence convention
 
@@ -42,8 +43,9 @@ When records appear to differ, read them in this order:
 3. the milestone or issue verdict for historical experimental evidence;
 4. this dossier for synthesis and orientation.
 
-In particular, [ADR-027](../adr/ADR-027.md) is authoritative for the current
-M1 hot-loop validation boundary. The M1 dossier keeps the separately delivered
+In particular, [ADR-027](../adr/ADR-027.md) is authoritative for the M1 hot-loop
+validation boundary, while [ADR-029](../adr/ADR-029.md) owns M2's signed
+outcome-value composition. The M1 dossier keeps the separately delivered
 MW-040 episodic-memory work outside M1's scientific claim.
 
 ## Program boundary

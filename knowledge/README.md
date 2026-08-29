@@ -31,7 +31,7 @@ uv run --locked python knowledge/validate_graph.py \
 Expected result for this generated version:
 
 ```text
-summary: 0 failure(s), 1 warning(s), 226 nodes, 124 complete paths, ~1911 triples
+summary: 0 failure(s), 1 warning(s), 232 nodes, 150 complete paths, ~1955 triples
 ```
 
 ## Graph semantics

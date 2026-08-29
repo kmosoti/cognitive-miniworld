@@ -38,6 +38,8 @@ def test_confirmatory_configuration_freezes_the_mw020_demand_shift_gate() -> Non
     assert configuration.maximum_irreversible_error_increase == 0.0
     assert configuration.minimum_demand_target_increase == 5.0
     assert configuration.minimum_state_target_increase == 0.5
+    assert configuration.valuation_outcome_increment == 1.0
+    assert "marginal_value > 0" in configuration.valuation_selection_rule
 
 
 @pytest.mark.parametrize(
@@ -77,6 +79,8 @@ def test_smoke_gate_is_deterministic_anticipatory_sensitive_and_safe() -> None:
     assert first.latest_candidate_consume_tick == 8
     assert first.minimum_demand_target_increase == 5.0
     assert first.minimum_state_target_increase == 0.625
+    assert first.minimum_consume_resource_marginal_value > 0.0
+    assert first.maximum_preconsume_resource_marginal_value <= 0.0
     assert first.passed is True
     assert encode_dynamic_reference_result(first) == (
         encode_dynamic_reference_result(second)
@@ -98,6 +102,8 @@ def test_evidence_binds_reference_identity_and_forecast_deficit() -> None:
     assert evidence.consume_belief_id in evidence.consume_reference_id
     assert evidence.consume_forecast_id in evidence.consume_reference_id
     assert evidence.consume_reference_horizon_tick > evidence.candidate_consume_tick
+    assert evidence.consume_resource_marginal_value > 0.0
+    assert evidence.maximum_preconsume_resource_marginal_value <= 0.0
 
 
 def test_result_rejects_consistent_but_noncanonical_evidence() -> None:
@@ -146,7 +152,7 @@ def test_public_evidence_is_frozen_keyword_only_versioned_and_type_checked() -> 
             for parameter in inspect.signature(struct_type).parameters.values()
         )
 
-    assert CURRENT_DYNAMIC_REFERENCE_SCHEMA_VERSION == 1
+    assert CURRENT_DYNAMIC_REFERENCE_SCHEMA_VERSION == 2
     assert not inspect.signature(evaluate_dynamic_reference_generator).parameters
     with pytest.raises(ValueError, match="benchmark"):
         DynamicReferenceEvaluationConfig.for_tier("benchmark")

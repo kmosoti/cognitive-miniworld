@@ -938,6 +938,7 @@
         "cmw:claim/graded-decision-confidence"
       ],
       "testedBy": [
+        "cmw:experiment/dynamic-demand-shift",
         "cmw:experiment/delayed-action-arbitration",
         "cmw:experiment/appraisal-contrast"
       ],
@@ -2179,14 +2180,16 @@
     },
     {
       "label": "Predictable demand shift",
-      "description": "A dynamic reference generator anticipates rising demand and reduces time outside viability relative to a fixed set point.",
+      "description": "A dynamic reference generator anticipates rising demand, and signed state-relative value selects the resource action while reducing time outside viability relative to a fixed set point.",
       "tests": [
-        "cmw:primitive/reference-generator"
+        "cmw:primitive/reference-generator",
+        "cmw:primitive/action-arbitrator"
       ],
       "primaryMetric": "cmw:metric/time-outside-viability",
       "safetyMetric": "cmw:metric/viability-auc",
       "baseline": [
-        "cmw:baseline/reactive-static"
+        "cmw:baseline/reactive-static",
+        "cmw:baseline/fixed-positive-outcome-value"
       ],
       "failureMode": [
         "cmw:failure/proxy-regulation"
@@ -2576,6 +2579,12 @@
       "@type": "cmw:Baseline"
     },
     {
+      "label": "Fixed positive outcome value in every physiological state",
+      "description": "Evaluator-only MW-021 ablation assigning the identical positive marginal value to the same resource outcome regardless of state.",
+      "@id": "cmw:baseline/fixed-positive-outcome-value",
+      "@type": "cmw:Baseline"
+    },
+    {
       "label": "Last-observation carry-forward estimator",
       "@id": "cmw:baseline/last-observation",
       "@type": "cmw:Baseline"
@@ -2784,7 +2793,7 @@
       "identifier": "MW-REGULATION",
       "label": "Endogenous regulation",
       "description": "Replace static externally supplied targets with predicted viability trajectories and state-relative value.",
-      "status": "proposed",
+      "status": "complete",
       "implements": [
         "cmw:primitive/reference-generator"
       ],
@@ -3255,11 +3264,14 @@
       "identifier": "MW-021",
       "label": "State-relative outcome valuation",
       "priority": "P1",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-020"
       ],
-      "implements": [],
+      "implements": [
+        "cmw:primitive/action-arbitrator",
+        "cmw:baseline/fixed-positive-outcome-value"
+      ],
       "tests": [
         "cmw:experiment/dynamic-demand-shift"
       ],

@@ -73,6 +73,9 @@ from cmw.agents.registry import (
     resolve_baseline,
     resolved_baselines_for,
 )
+from cmw.agents.valuation import (
+    StateRelativeOutcomeValuator,
+)
 
 __all__ = [
     "BASELINE_COVERAGE",
@@ -104,6 +107,7 @@ __all__ = [
     "RandomCuriosityResult",
     "ReactiveFixedSetpointController",
     "ScalarAbsoluteErrorBaseline",
+    "StateRelativeOutcomeValuator",
     "StateValue",
     "TabularPredictionState",
     "TabularStateEstimator",
