@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from hashlib import sha256
 from typing import Final, Literal, cast
 
 import msgspec
@@ -861,6 +862,12 @@ def _validate_scan_receipt(
     return validated
 
 
+def _scan_snapshot_sha256(receipt: tuple[RetrievalScanEntry, ...]) -> str:
+    """Commit to the complete ordered scan projection of a recorder."""
+
+    return sha256(_ENCODER.encode(receipt)).hexdigest()
+
+
 def _retrieval_scan_work(
     receipt: tuple[RetrievalScanEntry, ...],
     query: tuple[FeatureValue, ...],
@@ -1166,6 +1173,7 @@ class EpisodicRetrieval(
     unit_cost: int
     query_context: tuple[FeatureValue, ...]
     scan_receipt: tuple[tuple[int, str, int], ...]
+    scan_snapshot_sha256: str
     matches: tuple[EpisodicMatch, ...]
 
     def __post_init__(self) -> None:
@@ -1193,6 +1201,8 @@ class EpisodicRetrieval(
         if any(type(item) is not EpisodicMatch for item in self.matches):
             raise TypeError("matches must contain only EpisodicMatch values")
         receipt = _validate_scan_receipt(self.scan_receipt)
+        if self.scan_snapshot_sha256 != _scan_snapshot_sha256(receipt):
+            raise ValueError("scan_receipt must match its recorder snapshot commitment")
         scan_work = _retrieval_scan_work(receipt, query)
         construction_work = _retrieval_construction_work(
             tuple(item.record for item in self.matches)
@@ -1267,6 +1277,13 @@ class EpisodicRecorder(
         )
         if keys != tuple(sorted(keys)) or len(keys) != len(set(keys)):
             raise ValueError("records must have sorted unique tick/trace IDs")
+
+    @property
+    def scan_snapshot_sha256(self) -> str:
+        """Identify the complete ordered projection used by retrieval scans."""
+
+        self.__post_init__()
+        return _scan_snapshot_sha256(_scan_receipt(self.records))
 
     def record(
         self,
@@ -1410,9 +1427,10 @@ class EpisodicRecorder(
                 nonempty=False,
             ),
         )
+        self.__post_init__()
         receipt = _scan_receipt(records)
         scan_work = _retrieval_scan_work(receipt, query)
-        self.__post_init__()
+        snapshot_sha256 = _scan_snapshot_sha256(receipt)
         scored = []
         for record in records:
             evidence, exact, compared, score = _match_evidence(
@@ -1452,6 +1470,7 @@ class EpisodicRecorder(
             unit_cost=scan_work + construction_work,
             query_context=query,
             scan_receipt=receipt,
+            scan_snapshot_sha256=snapshot_sha256,
             matches=matches,
         )
 

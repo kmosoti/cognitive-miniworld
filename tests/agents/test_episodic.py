@@ -437,6 +437,7 @@ def test_retrieval_charges_complete_record_validation_work(
         (record.trace.tick, record.trace.trace_id, len(record.trace.context))
         for record in memory.records
     )
+    assert retrieval.scan_snapshot_sha256 == memory.scan_snapshot_sha256
 
     monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", scan_work - 1)
     with pytest.raises(ValueError, match=r"retrieval.*scan limit"):
@@ -490,6 +491,32 @@ def test_retrieval_rejects_cost_that_omits_nonmatching_scans() -> None:
     with pytest.raises(ValueError, match="exact scan and construction work"):
         encode_episodic_retrieval(retrieval)
 
+    retrieval = memory.retrieve(query, limit=2)
+    forged_receipt = retrieval.scan_receipt[:-1]
+    assert forged_receipt[0][:2] == (
+        retrieval.matches[0].record.trace.tick,
+        retrieval.matches[0].record.trace.trace_id,
+    )
+    with pytest.raises(ValueError, match="snapshot commitment"):
+        msgspec.structs.replace(
+            retrieval,
+            unit_cost=underreported,
+            scan_receipt=forged_receipt,
+        )
+
+    reconstructed = msgspec.structs.replace(
+        retrieval,
+        unit_cost=underreported,
+        scan_receipt=forged_receipt,
+        scan_snapshot_sha256=episodic_module._scan_snapshot_sha256(forged_receipt),
+    )
+    assert reconstructed.scan_snapshot_sha256 != memory.scan_snapshot_sha256
+
+    object.__setattr__(retrieval, "unit_cost", underreported)
+    object.__setattr__(retrieval, "scan_receipt", forged_receipt)
+    with pytest.raises(ValueError, match="snapshot commitment"):
+        encode_episodic_retrieval(retrieval)
+
 
 def test_retrieval_binds_matches_to_canonical_scan_receipt() -> None:
     retrieval = _record(EpisodicRecorder(capacity=2), 0).retrieve(
@@ -501,6 +528,9 @@ def test_retrieval_binds_matches_to_canonical_scan_receipt() -> None:
         msgspec.structs.replace(
             retrieval,
             scan_receipt=((tick, trace_id, context_width - 1),),
+            scan_snapshot_sha256=episodic_module._scan_snapshot_sha256(
+                ((tick, trace_id, context_width - 1),)
+            ),
         )
 
 
