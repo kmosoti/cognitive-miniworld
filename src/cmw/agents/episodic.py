@@ -50,14 +50,14 @@ _MAX_RETRIEVAL_RESULTS: Final = 32
 _MAX_RETRIEVAL_WORK: Final = 65_536
 _RETRIEVAL_RECORD_VALIDATION_PASSES: Final = 4
 _RETRIEVAL_COMPARISON_PASSES: Final = 2
-# Constructing a returned match deep-validates one record. Deriving the cap
-# from the declared maxima makes every legitimately stored memory queryable
-# by construction: a record is admitted only below _MAX_RECORD_WORK, and at
-# most _MAX_RETRIEVAL_RESULTS records are ever constructed per query
-# (ADR-027).
+# Preflighting a returned record is charged as four validation passes. Deriving
+# the cap from the declared maxima makes every legitimately stored memory
+# queryable by construction: a record is admitted only below _MAX_RECORD_WORK,
+# and at most _MAX_RETRIEVAL_RESULTS records are returned per query (ADR-027).
 _MAX_CONSTRUCTION_WORK: Final = (
     _MAX_RETRIEVAL_RESULTS * _RETRIEVAL_RECORD_VALIDATION_PASSES * _MAX_RECORD_WORK
 )
+_MAX_TOTAL_RETRIEVAL_WORK: Final = _MAX_RETRIEVAL_WORK + _MAX_CONSTRUCTION_WORK
 
 _RELATIONS: Final = ("exact", "conflict", "query-only", "record-only")
 _ENCODER = msgspec.json.Encoder(order="deterministic")
@@ -72,6 +72,7 @@ type MatchRelation = Literal[
     "query-only",
     "record-only",
 ]
+type RetrievalScanEntry = tuple[int, str, int]
 
 
 def _same_feature(left: FeatureValue, right: FeatureValue) -> bool:
@@ -503,9 +504,7 @@ def _trace_link_shape(value: object, field: str, expected_length: int) -> None:
     if type(value) is not tuple:
         raise TypeError(f"{field} must be a tuple")
     if len(value) != expected_length:
-        raise ValueError(
-            f"{field} must contain exactly {expected_length} values"
-        )
+        raise ValueError(f"{field} must contain exactly {expected_length} values")
 
 
 def _preflight_inputs(
@@ -821,49 +820,88 @@ def _validated_inputs(
     )
 
 
-def _retrieval_work(
+def _scan_receipt(
     records: tuple[EpisodicRecord, ...],
-    query: tuple[FeatureValue, ...],
-    construction_count: int,
-) -> int:
-    """Charge what retrieval actually performs (ADR-027).
+) -> tuple[RetrievalScanEntry, ...]:
+    """Retain the inputs needed to reproduce scan work without full records."""
 
-    Scoring scans every record's context once against the query; deep record
-    validation happens only when a returned ``EpisodicMatch`` is constructed,
-    so the validation charge covers the ``construction_count`` most expensive
-    records rather than the whole store.  The charge stays conservative and
-    independent of which records match: the constructed matches are a subset
-    of the scanned records, so their validation work never exceeds the sum
-    over the most expensive candidates.
-    """
-    scan_work = 0
-    validation_works = []
+    return tuple(
+        (record.trace.tick, record.trace.trace_id, len(record.trace.context))
+        for record in records
+    )
+
+
+def _validate_scan_receipt(
+    value: object,
+) -> tuple[RetrievalScanEntry, ...]:
+    if type(value) is not tuple:
+        raise TypeError("scan_receipt must be a tuple")
+    if len(value) > _MAX_CAPACITY:
+        raise ValueError(f"scan_receipt must contain at most {_MAX_CAPACITY} entries")
+    receipt = []
+    for index, entry in enumerate(value):
+        if type(entry) is not tuple:
+            raise TypeError(f"scan_receipt[{index}] must be a tuple")
+        if len(entry) != 3:
+            raise ValueError(
+                f"scan_receipt[{index}] must contain tick, trace ID, and context width"
+            )
+        tick = _nonnegative_int(entry[0], f"scan_receipt[{index}].tick")
+        trace_id = _text(entry[1], f"scan_receipt[{index}].trace_id")
+        context_width = _positive_int(
+            entry[2],
+            f"scan_receipt[{index}].context_width",
+            _MAX_CONTEXT_FEATURES,
+        )
+        receipt.append((tick, trace_id, context_width))
+    validated = tuple(receipt)
+    keys = tuple((tick, trace_id) for tick, trace_id, _ in validated)
+    if keys != tuple(sorted(keys)) or len(keys) != len(set(keys)):
+        raise ValueError("scan_receipt must have sorted unique tick/trace IDs")
+    return validated
+
+
+def _retrieval_scan_work(
+    receipt: tuple[RetrievalScanEntry, ...],
+    query: tuple[FeatureValue, ...],
+) -> int:
+    scan_work = _RETRIEVAL_COMPARISON_PASSES * sum(
+        len(query) + context_width for _, _, context_width in receipt
+    )
+    if scan_work > _MAX_RETRIEVAL_WORK:
+        raise ValueError("retrieval exceeds its deterministic scan limit")
+    return scan_work
+
+
+def _retrieval_construction_work(
+    records: tuple[EpisodicRecord, ...],
+) -> int:
+    if len(records) > _MAX_RETRIEVAL_RESULTS:
+        raise ValueError(
+            f"retrieval may construct at most {_MAX_RETRIEVAL_RESULTS} records"
+        )
+    record_work = []
     for record in records:
+        if type(record) is not EpisodicRecord:
+            raise TypeError("retrieval records must be EpisodicRecord values")
         if type(record.trace) is not ExperienceTrace:
             raise TypeError("record.trace must be an ExperienceTrace")
-        record_work = _preflight_inputs(
-            context=record.trace.context,
-            belief=record.belief,
-            references=record.references,
-            proposals=record.proposals,
-            predictions=record.predictions,
-            decision=record.decision,
-            outcomes=record.outcomes,
-            error=record.error,
+        record_work.append(
+            _preflight_inputs(
+                context=record.trace.context,
+                belief=record.belief,
+                references=record.references,
+                proposals=record.proposals,
+                predictions=record.predictions,
+                decision=record.decision,
+                outcomes=record.outcomes,
+                error=record.error,
+            )
         )
-        validation_works.append(record_work)
-        scan_work += _RETRIEVAL_COMPARISON_PASSES * (
-            len(query) + len(record.trace.context)
-        )
-        if scan_work > _MAX_RETRIEVAL_WORK:
-            raise ValueError("retrieval exceeds its deterministic scan limit")
-    validation_works.sort(reverse=True)
-    construction_work = _RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
-        validation_works[:construction_count]
-    )
+    construction_work = _RETRIEVAL_RECORD_VALIDATION_PASSES * sum(record_work)
     if construction_work > _MAX_CONSTRUCTION_WORK:
         raise ValueError("retrieval exceeds its deterministic construction limit")
-    return scan_work + construction_work
+    return construction_work
 
 
 class EpisodicRecord(
@@ -1127,12 +1165,13 @@ class EpisodicRetrieval(
     schema_version: int
     unit_cost: int
     query_context: tuple[FeatureValue, ...]
+    scan_receipt: tuple[tuple[int, str, int], ...]
     matches: tuple[EpisodicMatch, ...]
 
     def __post_init__(self) -> None:
         _schema_version(self.schema_version)
         _nonnegative_int(self.unit_cost, "unit_cost")
-        if self.unit_cost > _MAX_RETRIEVAL_WORK:
+        if self.unit_cost > _MAX_TOTAL_RETRIEVAL_WORK:
             raise ValueError("unit_cost exceeds the deterministic work limit")
         query = _validate_features(
             self.query_context,
@@ -1153,15 +1192,20 @@ class EpisodicRetrieval(
             )
         if any(type(item) is not EpisodicMatch for item in self.matches):
             raise TypeError("matches must contain only EpisodicMatch values")
-        minimum_work = _retrieval_work(
-            tuple(item.record for item in self.matches),
-            query,
-            len(self.matches),
+        receipt = _validate_scan_receipt(self.scan_receipt)
+        scan_work = _retrieval_scan_work(receipt, query)
+        construction_work = _retrieval_construction_work(
+            tuple(item.record for item in self.matches)
         )
-        if self.unit_cost < minimum_work:
-            raise ValueError(
-                "unit_cost must cover aggregate record validation work"
-            )
+        receipt_widths = {
+            (tick, trace_id): context_width for tick, trace_id, context_width in receipt
+        }
+        for item in self.matches:
+            trace = item.record.trace
+            if receipt_widths.get((trace.tick, trace.trace_id)) != len(trace.context):
+                raise ValueError("every match must be bound to its scan receipt entry")
+        if self.unit_cost != scan_work + construction_work:
+            raise ValueError("unit_cost must equal exact scan and construction work")
         for item in self.matches:
             expected_evidence, exact, compared, score = _match_evidence(
                 query,
@@ -1366,7 +1410,8 @@ class EpisodicRecorder(
                 nonempty=False,
             ),
         )
-        conservative_work = _retrieval_work(records, query, result_limit)
+        receipt = _scan_receipt(records)
+        scan_work = _retrieval_scan_work(receipt, query)
         self.__post_init__()
         scored = []
         for record in records:
@@ -1384,9 +1429,13 @@ class EpisodicRecorder(
                 item[0].trace.trace_id,
             )
         )
-        # ``EpisodicMatch`` deep-validates its record at construction, so it
-        # is built only for the returned matches: construction cost is bounded
-        # by ``limit`` rather than by occupancy (ADR-027).
+        selected = tuple(scored[:result_limit])
+        construction_work = _retrieval_construction_work(
+            tuple(record for record, _, _, _, _ in selected)
+        )
+        # Matches are built only for the returned prefix, so record preflight
+        # and construction work are bounded by ``limit`` rather than occupancy
+        # (ADR-027).
         matches = tuple(
             EpisodicMatch(
                 schema_version=EPISODIC_SCHEMA_VERSION,
@@ -1396,12 +1445,13 @@ class EpisodicRecorder(
                 comparison_count=compared,
                 evidence=evidence,
             )
-            for record, evidence, exact, compared, score in scored[:result_limit]
+            for record, evidence, exact, compared, score in selected
         )
         return EpisodicRetrieval(
             schema_version=EPISODIC_SCHEMA_VERSION,
-            unit_cost=conservative_work,
+            unit_cost=scan_work + construction_work,
             query_context=query,
+            scan_receipt=receipt,
             matches=matches,
         )
 

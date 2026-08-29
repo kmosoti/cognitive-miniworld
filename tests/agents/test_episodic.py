@@ -427,15 +427,15 @@ def test_retrieval_charges_complete_record_validation_work(
         * (len(query) + len(record.trace.context))
         for record in memory.records
     )
-    validation_works = sorted(
-        (record.unit_cost for record in memory.records), reverse=True
-    )
+    retrieval = memory.retrieve(query, limit=limit)
     construction_work = episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
-        validation_works[:limit]
+        match.record.unit_cost for match in retrieval.matches
     )
 
-    assert memory.retrieve(query, limit=limit).unit_cost == (
-        scan_work + construction_work
+    assert retrieval.unit_cost == scan_work + construction_work
+    assert retrieval.scan_receipt == tuple(
+        (record.trace.tick, record.trace.trace_id, len(record.trace.context))
+        for record in memory.records
     )
 
     monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", scan_work - 1)
@@ -448,6 +448,60 @@ def test_retrieval_charges_complete_record_validation_work(
     )
     with pytest.raises(ValueError, match=r"retrieval.*construction limit"):
         memory.retrieve(query, limit=limit)
+
+
+def test_retrieval_allows_construction_work_above_scan_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    memory = _record(EpisodicRecorder(capacity=2), 0)
+    query = (_feature("cue", "shared"),)
+    retrieval = memory.retrieve(query)
+    scan_work = episodic_module._RETRIEVAL_COMPARISON_PASSES * sum(
+        len(query) + len(record.trace.context) for record in memory.records
+    )
+    assert retrieval.unit_cost > scan_work
+
+    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", scan_work)
+
+    assert msgspec.structs.replace(retrieval) == retrieval
+
+
+def test_retrieval_rejects_cost_that_omits_nonmatching_scans() -> None:
+    memory = _record(EpisodicRecorder(capacity=2), 0)
+    memory = _record(memory, 1, cue="other", regime="old")
+    query = (_feature("cue", "shared"),)
+    retrieval = memory.retrieve(query, limit=2)
+
+    assert len(retrieval.scan_receipt) == 2
+    assert len(retrieval.matches) == 1
+    matched_only_scan = episodic_module._RETRIEVAL_COMPARISON_PASSES * sum(
+        len(query) + len(match.record.trace.context) for match in retrieval.matches
+    )
+    construction_work = episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
+        match.record.unit_cost for match in retrieval.matches
+    )
+    underreported = matched_only_scan + construction_work
+    assert underreported < retrieval.unit_cost
+
+    with pytest.raises(ValueError, match="exact scan and construction work"):
+        msgspec.structs.replace(retrieval, unit_cost=underreported)
+
+    object.__setattr__(retrieval, "unit_cost", underreported)
+    with pytest.raises(ValueError, match="exact scan and construction work"):
+        encode_episodic_retrieval(retrieval)
+
+
+def test_retrieval_binds_matches_to_canonical_scan_receipt() -> None:
+    retrieval = _record(EpisodicRecorder(capacity=2), 0).retrieve(
+        (_feature("cue", "shared"),)
+    )
+    tick, trace_id, context_width = retrieval.scan_receipt[0]
+
+    with pytest.raises(ValueError, match="bound to its scan receipt"):
+        msgspec.structs.replace(
+            retrieval,
+            scan_receipt=((tick, trace_id, context_width - 1),),
+        )
 
 
 def test_match_rejects_evidence_length_before_scanning_entries() -> None:
@@ -469,7 +523,7 @@ def test_match_rejects_evidence_length_before_scanning_entries() -> None:
         )
 
 
-def test_independent_retrieval_charges_aggregate_record_validation() -> None:
+def test_independent_retrieval_charges_exact_scan_and_construction_work() -> None:
     memory = _record(EpisodicRecorder(capacity=4), 1)
     memory = _record(memory, 3)
     retrieval = memory.retrieve(
@@ -477,7 +531,7 @@ def test_independent_retrieval_charges_aggregate_record_validation() -> None:
     )
     comparison_only = sum(match.comparison_count for match in retrieval.matches)
 
-    with pytest.raises(ValueError, match="aggregate record validation"):
+    with pytest.raises(ValueError, match="exact scan and construction work"):
         msgspec.structs.replace(retrieval, unit_cost=comparison_only)
 
 
@@ -691,6 +745,4 @@ def test_full_capacity_memory_is_always_retrievable() -> None:
         limit=3,
     )
     assert len(retrieval.matches) == 3
-    assert retrieval.unit_cost <= episodic_module._MAX_RETRIEVAL_WORK + (
-        episodic_module._MAX_CONSTRUCTION_WORK
-    )
+    assert retrieval.unit_cost <= episodic_module._MAX_TOTAL_RETRIEVAL_WORK
