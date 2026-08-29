@@ -55,14 +55,14 @@ This topology is executable for the Milestone 0 baseline/oracle qualification,
 the complete five-primitive Milestone 1 predictive loop, the completed
 Milestone 2 endogenous-regulation comparison, and the separately scoped MW-040
 episodic-memory comparison. Later candidate primitives enter through the same
-typed seams, one
-preregistered comparison at a time.
+typed seams, one preregistered comparison at a time. MW-041 now adds bounded
+delayed credit over MW-040's public experience traces.
 
 ## What exists now
 
-Package `0.15.0` retains the completed Milestone 0 substrate and Milestone 1
-predictive spine, separately retains the MW-040 episodic recorder, and closes
-Milestone 2 through MW-020 and MW-021:
+Package `0.16.0` retains the completed Milestone 0 substrate and Milestone 1
+predictive spine, closes Milestone 2 through MW-020 and MW-021, and separately
+adds the MW-040 episodic recorder and MW-041 delayed-credit assigner:
 
 - CPython 3.14.7 free-threaded is the primary locked runtime, with exact
   conventional 3.14.7 retained as a compatibility lane.
@@ -122,6 +122,10 @@ Milestone 2 through MW-020 and MW-021:
 - `DynamicReferenceGenerator` combines a public belief, forecast, and resource
   budget into a bounded reference trajectory whose target rises with predicted
   demand and current-state deficit while preserving exact contract provenance.
+- `CreditAssigner` retains bounded provenance-backed contributor activations,
+  applies explicit per-tick replacing-trace decay, and writes inspectable
+  eligibility weights to a new `ExperienceTrace`; equal global reinforcement
+  remains executable as the delayed-credit ablation.
 - `cmw.experiments` runs isolated serial or free-threaded paired episodes,
   materializes public stimuli without leaking evaluator schedules, confines the
   tractable demand-shift oracle to evaluation code, and rejects excessive work
@@ -137,6 +141,9 @@ Milestone 2 through MW-020 and MW-021:
 - The MW-012 evaluator contrasts expected-but-undesirable with
   unexpected-but-safe outcomes, measuring whether typed channels target model
   and control updates more precisely than the scalar absolute-error ablation.
+- The MW-041 evaluator pairs decayed eligibility with equal global
+  reinforcement on `delayed_poison`, measuring causal credit precision and
+  downstream viability across the frozen seed tiers.
 - The MW-013 evaluator crosses every hidden truth assignment with every public
   observation mask, compares feasible-best-action recall with a goal-only
   baseline, and compares invalid-action rate with enumerating every action.
