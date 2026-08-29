@@ -7,6 +7,7 @@ ADR, authorize a dependency, or count as milestone evidence.
 | Proposal | Status | Purpose |
 | --- | --- | --- |
 | [Deterministic prose linter and formatter](prose-linter/README.md) | Design only | Make Markdown style checks and safe normalization reproducible, with a Lean 4 model of the formatter laws |
+| [M3 preregistration realignment](m3-realignment/README.md) | Design only | Realign M3 experiment gates on statistical validity, epistemic value, and regret budgets, with Lean 4 proofs of the constraints |
 
 Implementation requires a dedicated GORDIAN work item. If a proposal changes a
 durable architecture or CI acceptance boundary, it also requires an ADR before
