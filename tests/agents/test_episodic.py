@@ -421,20 +421,33 @@ def test_retrieval_charges_complete_record_validation_work(
     memory = _record(EpisodicRecorder(capacity=4), 1)
     memory = _record(memory, 3)
     query = (_feature("cue", "shared"), _feature("regime", "current"))
-    expected_work = sum(
-        (
-            episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * record.unit_cost
-            + episodic_module._RETRIEVAL_COMPARISON_PASSES
-            * (len(query) + len(record.trace.context))
-        )
+    limit = 2
+    scan_work = sum(
+        episodic_module._RETRIEVAL_COMPARISON_PASSES
+        * (len(query) + len(record.trace.context))
         for record in memory.records
     )
+    validation_works = sorted(
+        (record.unit_cost for record in memory.records), reverse=True
+    )
+    construction_work = episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
+        validation_works[:limit]
+    )
 
-    assert memory.retrieve(query).unit_cost == expected_work
+    assert memory.retrieve(query, limit=limit).unit_cost == (
+        scan_work + construction_work
+    )
 
-    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", expected_work - 1)
-    with pytest.raises(ValueError, match=r"retrieval.*work limit"):
-        memory.retrieve(query)
+    monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", scan_work - 1)
+    with pytest.raises(ValueError, match=r"retrieval.*scan limit"):
+        memory.retrieve(query, limit=limit)
+
+    monkeypatch.undo()
+    monkeypatch.setattr(
+        episodic_module, "_MAX_CONSTRUCTION_WORK", construction_work - 1
+    )
+    with pytest.raises(ValueError, match=r"retrieval.*construction limit"):
+        memory.retrieve(query, limit=limit)
 
 
 def test_match_rejects_evidence_length_before_scanning_entries() -> None:
@@ -541,10 +554,10 @@ def test_record_and_retrieval_reject_work_before_expensive_construction(
 
     def unexpected_feature(*args: object, **kwargs: object) -> object:
         del args, kwargs
-        raise AssertionError("work rejection occurred after leaf validation")
+        raise AssertionError("work rejection occurred after feature validation")
 
     monkeypatch.setattr(episodic_module, "_MAX_RECORD_WORK", 0)
-    monkeypatch.setattr(episodic_module, "_validate_feature", unexpected_feature)
+    monkeypatch.setattr(episodic_module, "_validate_features", unexpected_feature)
     with pytest.raises(ValueError, match="record-work limit"):
         EpisodicRecorder(capacity=2).record(
             episode_id="bounded-work",
@@ -562,7 +575,7 @@ def test_record_and_retrieval_reject_work_before_expensive_construction(
 
     monkeypatch.setattr(episodic_module, "_MAX_RETRIEVAL_WORK", 0)
     monkeypatch.setattr(episodic_module, "_match_evidence", unexpected_match)
-    with pytest.raises(ValueError, match="deterministic work limit"):
+    with pytest.raises(ValueError, match="deterministic scan limit"):
         memory.retrieve((_feature("cue", "shared"),))
 
 
@@ -576,7 +589,7 @@ def test_exact_types_and_mutated_nested_evidence_are_revalidated() -> None:
     memory = _record(EpisodicRecorder(capacity=2), 0)
     retrieval = memory.retrieve((_feature("cue", "shared"),))
     object.__setattr__(retrieval.matches[0].evidence[0], "relation", "conflict")
-    with pytest.raises(ValueError, match="relation"):
+    with pytest.raises(ValueError, match="recomputed"):
         encode_episodic_retrieval(retrieval)
 
     memory = _record(EpisodicRecorder(capacity=2), 0)
@@ -608,3 +621,76 @@ def test_issue_specific_evidence_values_are_frozen_keyword_only_and_versioned() 
             (_feature("cue", "shared"),),
             limit=True,
         )
+
+
+def test_decode_boundary_rejects_poisoned_nested_values() -> None:
+    """Decoding runs every nested ``__post_init__``: the real trust boundary.
+
+    In-process revalidation of already-constructed frozen values was removed
+    (ADR-027); this pins the property that removal relies on, for both a
+    nested contract violation and a canonical-derivation violation.
+    """
+    record = _record(EpisodicRecorder(capacity=2), 0).records[0]
+    payload = encode_episodic_record(record)
+
+    poisoned = payload.replace(b'"confidence":0.9', b'"confidence":2.0', 1)
+    assert poisoned != payload
+    with pytest.raises(msgspec.ValidationError, match="confidence"):
+        msgspec.json.decode(poisoned, type=EpisodicRecord)
+
+    trace_id = record.trace.trace_id.encode()
+    retargeted = payload.replace(trace_id, trace_id + b"-forged")
+    assert retargeted != payload
+    with pytest.raises(msgspec.ValidationError, match="trace"):
+        msgspec.json.decode(retargeted, type=EpisodicRecord)
+
+
+def test_retrieval_limits_return_prefixes_of_the_same_canonical_order() -> None:
+    memory = EpisodicRecorder(capacity=8)
+    for tick, (cue, regime) in enumerate(
+        (
+            ("shared", "current"),
+            ("shared", "old"),
+            ("other", "current"),
+            ("shared", "current"),
+        )
+    ):
+        memory = memory.record(
+            episode_id=f"episode:{tick}",
+            tick=tick,
+            context=(_feature("cue", cue), _feature("regime", regime)),
+            **_loop_values(tick),
+        )
+    query = (_feature("cue", "shared"), _feature("regime", "current"))
+
+    widest = memory.retrieve(query, limit=4).matches
+    for limit in (1, 2, 3):
+        assert memory.retrieve(query, limit=limit).matches == widest[:limit]
+
+
+def test_full_capacity_memory_is_always_retrievable() -> None:
+    """Admission and retrieval bounds must compose (ADR-027).
+
+    Storage previously admitted records whose aggregate validation work made
+    every later query exceed the retrieval work limit. The construction cap is
+    now derived from the per-record admission bound, so any legitimately
+    filled memory stays queryable; the derivation is pinned alongside the
+    behavior.
+    """
+    assert episodic_module._MAX_CONSTRUCTION_WORK == (
+        episodic_module._MAX_RETRIEVAL_RESULTS
+        * episodic_module._RETRIEVAL_RECORD_VALIDATION_PASSES
+        * episodic_module._MAX_RECORD_WORK
+    )
+
+    memory = EpisodicRecorder(capacity=256)
+    for tick in range(256):
+        memory = _record(memory, tick)
+    retrieval = memory.retrieve(
+        (_feature("cue", "shared"), _feature("regime", "current")),
+        limit=3,
+    )
+    assert len(retrieval.matches) == 3
+    assert retrieval.unit_cost <= episodic_module._MAX_RETRIEVAL_WORK + (
+        episodic_module._MAX_CONSTRUCTION_WORK
+    )

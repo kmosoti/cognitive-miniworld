@@ -14,7 +14,6 @@ from cmw.contracts import (
     ActionProposal,
     BeliefState,
     ErrorBundle,
-    FeatureValue,
     PredictedOutcome,
     PredictionDistribution,
     Provenance,
@@ -638,14 +637,13 @@ def _prepare_inputs(
     if work > _MAX_WORK:
         raise ValueError("arbitration exceeds its deterministic work limit")
 
-    _validate_belief(belief)
-    _validate_reference(reference)
-    _validate_error(error)
-    _validate_budget(budget)
-    for candidate in candidates:
-        _validate_proposal(candidate)
-    for prediction in predictions:
-        _validate_prediction(prediction)
+    # Inputs are frozen msgspec structs, deep-validated at every boundary that
+    # can create them -- construction, decode, convert, and replace all run
+    # ``__post_init__`` -- so re-running those validators here re-checks values
+    # that cannot have changed (ADR-027). What remains are the properties no
+    # contract enforces and arbitration actually consumes: evaluated
+    # feature-name uniqueness, checked below once the horizon points are
+    # known, and every cross-object rule.
     if budget.tick != belief.revision_tick or error.tick != belief.revision_tick:
         raise ValueError("belief, error, and budget must describe the same tick")
 
@@ -703,58 +701,6 @@ def _prepare_inputs(
         ),
         work=work,
     )
-
-
-def _validate_belief(belief: BeliefState) -> None:
-    belief.__post_init__()
-    belief.provenance.__post_init__()
-    belief.uncertainty.__post_init__()
-    for hypothesis in belief.hypotheses:
-        hypothesis.__post_init__()
-        _validate_feature_values(hypothesis.features)
-
-
-def _validate_reference(reference: ReferenceTrajectory) -> None:
-    reference.__post_init__()
-    reference.provenance.__post_init__()
-    reference.uncertainty.__post_init__()
-    for point in reference.points:
-        point.__post_init__()
-
-
-def _validate_proposal(proposal: ActionProposal) -> None:
-    proposal.__post_init__()
-    proposal.estimated_cost.__post_init__()
-    proposal.provenance.__post_init__()
-    proposal.uncertainty.__post_init__()
-    for parameter in proposal.parameters:
-        parameter.__post_init__()
-
-
-def _validate_prediction(prediction: PredictionDistribution) -> None:
-    prediction.__post_init__()
-    prediction.provenance.__post_init__()
-    prediction.uncertainty.__post_init__()
-    for outcome in prediction.outcomes:
-        outcome.__post_init__()
-        _validate_feature_values(outcome.features)
-
-
-def _validate_error(error: ErrorBundle) -> None:
-    error.__post_init__()
-    error.provenance.__post_init__()
-    error.uncertainty.__post_init__()
-
-
-def _validate_budget(budget: ResourceBudget) -> None:
-    budget.__post_init__()
-    budget.provenance.__post_init__()
-    budget.uncertainty.__post_init__()
-
-
-def _validate_feature_values(features: tuple[FeatureValue, ...]) -> None:
-    for feature in features:
-        feature.__post_init__()
 
 
 def _validate_evaluated_feature_names(

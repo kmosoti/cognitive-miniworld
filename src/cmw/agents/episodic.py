@@ -50,9 +50,21 @@ _MAX_RETRIEVAL_RESULTS: Final = 32
 _MAX_RETRIEVAL_WORK: Final = 65_536
 _RETRIEVAL_RECORD_VALIDATION_PASSES: Final = 4
 _RETRIEVAL_COMPARISON_PASSES: Final = 2
+# Constructing a returned match deep-validates one record. Deriving the cap
+# from the declared maxima makes every legitimately stored memory queryable
+# by construction: a record is admitted only below _MAX_RECORD_WORK, and at
+# most _MAX_RETRIEVAL_RESULTS records are ever constructed per query
+# (ADR-027).
+_MAX_CONSTRUCTION_WORK: Final = (
+    _MAX_RETRIEVAL_RESULTS * _RETRIEVAL_RECORD_VALIDATION_PASSES * _MAX_RECORD_WORK
+)
 
 _RELATIONS: Final = ("exact", "conflict", "query-only", "record-only")
 _ENCODER = msgspec.json.Encoder(order="deterministic")
+# Deep-revalidating decoders for the outbound encode boundary (ADR-027);
+# forward references resolve after the classes are defined below.
+_RECORD_DECODER: msgspec.json.Decoder[EpisodicRecord]
+_RETRIEVAL_DECODER: msgspec.json.Decoder[EpisodicRetrieval]
 
 type MatchRelation = Literal[
     "exact",
@@ -133,10 +145,6 @@ def _bounded_tuple(
     return values
 
 
-def _validate_feature(feature: FeatureValue) -> None:
-    feature.__post_init__()
-
-
 def _validate_features(
     value: object,
     field: str,
@@ -154,8 +162,6 @@ def _validate_features(
             nonempty=nonempty,
         ),
     )
-    for feature in features:
-        _validate_feature(feature)
     if canonical_names:
         names = tuple(feature.name for feature in features)
         if names != tuple(sorted(names)) or len(names) != len(set(names)):
@@ -169,16 +175,13 @@ def _validate_provenance(value: object, field: str) -> Provenance:
     provenance = value
     if len(provenance.source_event_ids) > _MAX_SOURCE_EVENT_IDS:
         raise ValueError(f"{field} exceeds the source-event limit")
-    provenance.__post_init__()
     return provenance
 
 
 def _validate_uncertainty(value: object, field: str) -> Uncertainty:
     if type(value) is not Uncertainty:
         raise TypeError(f"{field} must be an Uncertainty")
-    uncertainty = value
-    uncertainty.__post_init__()
-    return uncertainty
+    return value
 
 
 def _validate_belief(value: object) -> BeliefState:
@@ -192,7 +195,6 @@ def _validate_belief(value: object) -> BeliefState:
         _MAX_BELIEF_HYPOTHESES,
     )
     for index, hypothesis in enumerate(belief.hypotheses):
-        hypothesis.__post_init__()
         _validate_features(
             hypothesis.features,
             f"belief.hypotheses[{index}].features",
@@ -200,7 +202,6 @@ def _validate_belief(value: object) -> BeliefState:
         )
     _validate_provenance(belief.provenance, "belief.provenance")
     _validate_uncertainty(belief.uncertainty, "belief.uncertainty")
-    belief.__post_init__()
     return belief
 
 
@@ -221,8 +222,6 @@ def _validate_references(value: object) -> tuple[ReferenceTrajectory, ...]:
             f"references[{reference_index}].points",
             _MAX_REFERENCE_POINTS,
         )
-        for point in reference.points:
-            point.__post_init__()
         _validate_provenance(
             reference.provenance,
             f"references[{reference_index}].provenance",
@@ -231,7 +230,6 @@ def _validate_references(value: object) -> tuple[ReferenceTrajectory, ...]:
             reference.uncertainty,
             f"references[{reference_index}].uncertainty",
         )
-        reference.__post_init__()
     identifiers = tuple(reference.trajectory_id for reference in references)
     if identifiers != tuple(sorted(identifiers)) or len(identifiers) != len(
         set(identifiers)
@@ -243,7 +241,6 @@ def _validate_references(value: object) -> tuple[ReferenceTrajectory, ...]:
 def _validate_resource_cost(value: object, field: str) -> None:
     if type(value) is not ResourceCost:
         raise TypeError(f"{field} must be a ResourceCost")
-    value.__post_init__()
 
 
 def _validate_proposals(value: object) -> tuple[ActionProposal, ...]:
@@ -273,7 +270,6 @@ def _validate_proposals(value: object) -> tuple[ActionProposal, ...]:
             proposal.uncertainty,
             f"proposals[{proposal_index}].uncertainty",
         )
-        proposal.__post_init__()
     identifiers = tuple(proposal.proposal_id for proposal in proposals)
     if identifiers != tuple(sorted(identifiers)) or len(identifiers) != len(
         set(identifiers)
@@ -300,7 +296,6 @@ def _validate_predictions(value: object) -> tuple[PredictionDistribution, ...]:
             _MAX_PREDICTED_OUTCOMES,
         )
         for outcome_index, outcome in enumerate(prediction.outcomes):
-            outcome.__post_init__()
             _validate_features(
                 outcome.features,
                 (f"predictions[{prediction_index}].outcomes[{outcome_index}].features"),
@@ -337,8 +332,6 @@ def _validate_decision(value: object) -> ActionDecision:
         _MAX_RATIONALE_COMPONENTS,
         nonempty=False,
     )
-    for component in decision.rationale:
-        component.__post_init__()
     _validate_provenance(decision.provenance, "decision.provenance")
     _validate_uncertainty(decision.uncertainty, "decision.uncertainty")
     decision.__post_init__()
@@ -369,7 +362,6 @@ def _validate_outcomes(value: object) -> tuple[ObservationEnvelope, ...]:
             outcome.uncertainty,
             f"outcomes[{outcome_index}].uncertainty",
         )
-        outcome.__post_init__()
     keys = tuple((outcome.tick, outcome.event_id) for outcome in outcomes)
     if keys != tuple(sorted(keys)):
         raise ValueError("outcomes must be sorted by tick and event ID")
@@ -385,7 +377,6 @@ def _validate_error(value: object) -> ErrorBundle:
     error = value
     _validate_provenance(error.provenance, "error.provenance")
     _validate_uncertainty(error.uncertainty, "error.uncertainty")
-    error.__post_init__()
     return error
 
 
@@ -833,8 +824,20 @@ def _validated_inputs(
 def _retrieval_work(
     records: tuple[EpisodicRecord, ...],
     query: tuple[FeatureValue, ...],
+    construction_count: int,
 ) -> int:
-    work = 0
+    """Charge what retrieval actually performs (ADR-027).
+
+    Scoring scans every record's context once against the query; deep record
+    validation happens only when a returned ``EpisodicMatch`` is constructed,
+    so the validation charge covers the ``construction_count`` most expensive
+    records rather than the whole store.  The charge stays conservative and
+    independent of which records match: the constructed matches are a subset
+    of the scanned records, so their validation work never exceeds the sum
+    over the most expensive candidates.
+    """
+    scan_work = 0
+    validation_works = []
     for record in records:
         if type(record.trace) is not ExperienceTrace:
             raise TypeError("record.trace must be an ExperienceTrace")
@@ -848,14 +851,19 @@ def _retrieval_work(
             outcomes=record.outcomes,
             error=record.error,
         )
-        comparison_work = len(query) + len(record.trace.context)
-        work += (
-            _RETRIEVAL_RECORD_VALIDATION_PASSES * record_work
-            + _RETRIEVAL_COMPARISON_PASSES * comparison_work
+        validation_works.append(record_work)
+        scan_work += _RETRIEVAL_COMPARISON_PASSES * (
+            len(query) + len(record.trace.context)
         )
-        if work > _MAX_RETRIEVAL_WORK:
-            raise ValueError("retrieval exceeds its deterministic work limit")
-    return work
+        if scan_work > _MAX_RETRIEVAL_WORK:
+            raise ValueError("retrieval exceeds its deterministic scan limit")
+    validation_works.sort(reverse=True)
+    construction_work = _RETRIEVAL_RECORD_VALIDATION_PASSES * sum(
+        validation_works[:construction_count]
+    )
+    if construction_work > _MAX_CONSTRUCTION_WORK:
+        raise ValueError("retrieval exceeds its deterministic construction limit")
+    return scan_work + construction_work
 
 
 class EpisodicRecord(
@@ -927,7 +935,6 @@ class EpisodicRecord(
         _trace_link_shape(self.trace.eligibility, "trace.eligibility", 0)
         _validate_provenance(self.trace.provenance, "trace.provenance")
         _validate_uncertainty(self.trace.uncertainty, "trace.uncertainty")
-        self.trace.__post_init__()
         if self.unit_cost != expected_work or self.trace.unit_cost != expected_work:
             raise ValueError("unit_cost must be recomputed from bounded record work")
         if self.trace.trace_id != (
@@ -1008,13 +1015,11 @@ class FeatureMatchEvidence(
         if self.query_value is not None:
             if type(self.query_value) is not FeatureValue:
                 raise TypeError("query_value must be a FeatureValue or None")
-            _validate_feature(self.query_value)
             if self.query_value.name != self.feature_name:
                 raise ValueError("query_value name must match feature_name")
         if self.recorded_value is not None:
             if type(self.recorded_value) is not FeatureValue:
                 raise TypeError("recorded_value must be a FeatureValue or None")
-            _validate_feature(self.recorded_value)
             if self.recorded_value.name != self.feature_name:
                 raise ValueError("recorded_value name must match feature_name")
         if type(self.relation) is not str or self.relation not in _RELATIONS:
@@ -1085,7 +1090,6 @@ class EpisodicMatch(
         _schema_version(self.schema_version)
         if type(self.record) is not EpisodicRecord:
             raise TypeError("record must be an EpisodicRecord")
-        self.record.__post_init__()
         _unit_interval(self.score, "score")
         _nonnegative_int(self.exact_match_count, "exact_match_count")
         _positive_int(
@@ -1099,8 +1103,6 @@ class EpisodicMatch(
             raise ValueError("evidence length must equal comparison_count")
         if any(type(item) is not FeatureMatchEvidence for item in self.evidence):
             raise TypeError("evidence must contain FeatureMatchEvidence values")
-        for item in self.evidence:
-            item.__post_init__()
         names = tuple(item.feature_name for item in self.evidence)
         if names != tuple(sorted(names)) or len(names) != len(set(names)):
             raise ValueError("match evidence must have sorted unique feature names")
@@ -1154,13 +1156,13 @@ class EpisodicRetrieval(
         minimum_work = _retrieval_work(
             tuple(item.record for item in self.matches),
             query,
+            len(self.matches),
         )
         if self.unit_cost < minimum_work:
             raise ValueError(
                 "unit_cost must cover aggregate record validation work"
             )
         for item in self.matches:
-            item.__post_init__()
             expected_evidence, exact, compared, score = _match_evidence(
                 query,
                 item.record.trace.context,
@@ -1203,6 +1205,12 @@ class EpisodicRecorder(
     records: tuple[EpisodicRecord, ...] = ()
 
     def __post_init__(self) -> None:
+        # Shape and ordering only. Every stored record was deep-validated at
+        # its own construction boundary: msgspec runs ``__post_init__`` on
+        # construction, decode, convert, and replace, and records are frozen,
+        # so a deep pass here re-checks values that cannot have changed and
+        # makes storage cost quadratic in occupancy (ADR-027). Deep
+        # revalidation remains at the outbound encode boundary.
         _positive_int(self.capacity, "capacity", _MAX_CAPACITY)
         if type(self.records) is not tuple:
             raise TypeError("records must be a tuple")
@@ -1210,8 +1218,6 @@ class EpisodicRecorder(
             raise ValueError("records must not exceed capacity")
         if any(type(record) is not EpisodicRecord for record in self.records):
             raise TypeError("records must contain only EpisodicRecord values")
-        for record in self.records:
-            record.__post_init__()
         keys = tuple(
             (record.trace.tick, record.trace.trace_id) for record in self.records
         )
@@ -1360,9 +1366,9 @@ class EpisodicRecorder(
                 nonempty=False,
             ),
         )
-        conservative_work = _retrieval_work(records, query)
+        conservative_work = _retrieval_work(records, query, result_limit)
         self.__post_init__()
-        candidates = []
+        scored = []
         for record in records:
             evidence, exact, compared, score = _match_evidence(
                 query,
@@ -1370,25 +1376,27 @@ class EpisodicRecorder(
             )
             if score <= 0.0:
                 continue
-            candidates.append(
-                EpisodicMatch(
-                    schema_version=EPISODIC_SCHEMA_VERSION,
-                    record=record,
-                    score=score,
-                    exact_match_count=exact,
-                    comparison_count=compared,
-                    evidence=evidence,
-                )
+            scored.append((record, evidence, exact, compared, score))
+        scored.sort(
+            key=lambda item: (
+                -item[4],
+                -item[0].trace.tick,
+                item[0].trace.trace_id,
             )
+        )
+        # ``EpisodicMatch`` deep-validates its record at construction, so it
+        # is built only for the returned matches: construction cost is bounded
+        # by ``limit`` rather than by occupancy (ADR-027).
         matches = tuple(
-            sorted(
-                candidates,
-                key=lambda item: (
-                    -item.score,
-                    -item.record.trace.tick,
-                    item.record.trace.trace_id,
-                ),
-            )[:result_limit]
+            EpisodicMatch(
+                schema_version=EPISODIC_SCHEMA_VERSION,
+                record=record,
+                score=score,
+                exact_match_count=exact,
+                comparison_count=compared,
+                evidence=evidence,
+            )
+            for record, evidence, exact, compared, score in scored[:result_limit]
         )
         return EpisodicRetrieval(
             schema_version=EPISODIC_SCHEMA_VERSION,
@@ -1399,21 +1407,42 @@ class EpisodicRecorder(
 
 
 def encode_episodic_record(record: EpisodicRecord) -> bytes:
-    """Return canonical JSON after revalidating the complete record graph."""
+    """Return canonical JSON after revalidating the complete record graph.
+
+    Decoding re-runs ``__post_init__`` for every nested struct, so the round
+    trip is a complete deep revalidation with no hand-written traversal to
+    drift from the contracts; equality then proves the encoding is canonical
+    (ADR-027). In-process values are validated once at construction, and
+    this outbound boundary is where a mutated frozen value is caught.
+    """
 
     if type(record) is not EpisodicRecord:
         raise TypeError("record must be an EpisodicRecord")
     record.__post_init__()
-    return _ENCODER.encode(record)
+    payload = _ENCODER.encode(record)
+    if _RECORD_DECODER.decode(payload) != record:
+        raise ValueError("record must round-trip canonically")
+    return payload
 
 
 def encode_episodic_retrieval(retrieval: EpisodicRetrieval) -> bytes:
-    """Return canonical JSON after revalidating all match explanations."""
+    """Return canonical JSON after revalidating all match explanations.
+
+    The round trip deep-revalidates every nested struct exactly as
+    ``encode_episodic_record`` does (ADR-027).
+    """
 
     if type(retrieval) is not EpisodicRetrieval:
         raise TypeError("retrieval must be an EpisodicRetrieval")
     retrieval.__post_init__()
-    return _ENCODER.encode(retrieval)
+    payload = _ENCODER.encode(retrieval)
+    if _RETRIEVAL_DECODER.decode(payload) != retrieval:
+        raise ValueError("retrieval must round-trip canonically")
+    return payload
+
+
+_RECORD_DECODER = msgspec.json.Decoder(EpisodicRecord)
+_RETRIEVAL_DECODER = msgspec.json.Decoder(EpisodicRetrieval)
 
 
 __all__ = [
