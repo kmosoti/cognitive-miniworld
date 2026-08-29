@@ -277,6 +277,8 @@ README.md          implemented architecture and operating constraints
 CLAUDE.md          implementation invariants and working agreement
 knowledge/         hypotheses, work packages, acceptance criteria, validator
 docs/adr/          durable architectural decisions
+docs/design/       proposed tooling and architecture designs
+docs/dossiers/     milestone theses, designs, scientific evidence, and engineering
 docs/verdicts/     completed-work and milestone evidence
 src/cmw/           executable experimental substrate
 tests/             unit, property, replay, and runtime gates
@@ -285,6 +287,7 @@ tests/             unit, property, replay, and runtime gates
 The durable research program and dependency graph live in the
 [knowledge graph](knowledge/cognitive-miniworld-knowledge-graph.jsonld), while
 [GORDIAN](https://github.com/users/kmosoti/projects/8) tracks active scope and
-delivery order. ADRs record decisions and verdicts record evidence. Milestone 0
-is closed with a measurable oracle gap; later primitives remain unpromoted until
-their own preregistered comparisons pass.
+delivery order. [Milestone dossiers](docs/dossiers/README.md) synthesize the
+thesis, design, observations, science, and engineering; ADRs record decisions
+and verdicts preserve accepted evidence. Milestone 0 qualifies the laboratory,
+and Milestone 1 closes the first five-primitive predictive-control loop.
