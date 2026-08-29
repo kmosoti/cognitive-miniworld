@@ -3389,7 +3389,7 @@
       "identifier": "MW-041",
       "label": "Credit assigner",
       "priority": "P1",
-      "status": "proposed",
+      "status": "complete",
       "dependsOn": [
         "cmw:issue/MW-040",
         "cmw:issue/MW-012"

@@ -18,6 +18,15 @@ from cmw.agents.arbitration import (
     ArbitrationResult,
     ArbitrationWeights,
 )
+from cmw.agents.credit import (
+    CREDIT_SCHEMA_VERSION,
+    CURRENT_CREDIT_SCHEMA_VERSION,
+    DEFAULT_DECAY_FACTOR,
+    CreditAssigner,
+    EligibilityActivation,
+    EligibilityState,
+    GlobalReinforcementBaseline,
+)
 from cmw.agents.curiosity import (
     PredictionErrorCuriosityBaseline,
     RandomCuriosityBaseline,
@@ -80,7 +89,10 @@ from cmw.agents.valuation import (
 __all__ = [
     "BASELINE_COVERAGE",
     "BASELINE_COVERAGE_REGISTRY",
+    "CREDIT_SCHEMA_VERSION",
+    "CURRENT_CREDIT_SCHEMA_VERSION",
     "CURRENT_EPISODIC_SCHEMA_VERSION",
+    "DEFAULT_DECAY_FACTOR",
     "EPISODIC_SCHEMA_VERSION",
     "ActionArbitrator",
     "ActionValue",
@@ -92,12 +104,16 @@ __all__ = [
     "BaselineCoverage",
     "BaselineImplementation",
     "BeliefAffordanceGenerator",
+    "CreditAssigner",
     "DynamicReferenceGenerator",
+    "EligibilityActivation",
+    "EligibilityState",
     "EpisodicMatch",
     "EpisodicRecord",
     "EpisodicRecorder",
     "EpisodicRetrieval",
     "FeatureMatchEvidence",
+    "GlobalReinforcementBaseline",
     "KnownTabularForwardModel",
     "KnownTransition",
     "LastObservationEstimator",
